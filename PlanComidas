@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Comidas Familiar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'soft-green': '#D1FAE5',
+                        'deep-green': '#065F46',
+                        'warm-orange': '#FFEDD5',
+                        'soft-blue': '#DBEAFE',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F3F4F6; }
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
+        .recipe-card:hover { transform: translateY(-2px); transition: all 0.2s; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-deep-green"><i class="fas fa-leaf mr-2"></i>Menú Saludable & Batch Cooking</h1>
+                <p class="text-sm text-gray-500 hidden sm:block">Del 10 al 21 de Enero (Con pausa 16-18)</p>
+            </div>
+            <button onclick="exportToWhatsapp()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow transition flex items-center">
+                <i class="fab fa-whatsapp mr-2"></i> <span class="hidden sm:inline">Enviar a Ella</span><span class="sm:hidden">Enviar</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
+
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                <h3 class="font-bold text-lg mb-2">🧊 Estrategia Congelador</h3>
+                <p class="text-sm text-gray-600">Los días 19, 20 y 21 son 100% de "sacar y calentar". Cocina este finde pensando en guardar tuppers dobles para esos días.</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-orange-500">
+                <h3 class="font-bold text-lg mb-2">🤖 Cecotec Mambo</h3>
+                <p class="text-sm text-gray-600">Usa la mariposa para las cremas (textura fina) y la pala MamboMix para el risotto y guisos que no quieres triturar.</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-pink-500">
+                <h3 class="font-bold text-lg mb-2">❤️ Digestión</h3>
+                <p class="text-sm text-gray-600">Cenas suaves. Evitar sofritos muy quemados. Usar el horno para recalentar mantiene mejor el sabor y textura.</p>
+            </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="grid grid-cols-1 md:grid-cols-7 border-b bg-gray-50">
+                <!-- Headers for Desktop -->
+                <div class="hidden md:block p-4 font-bold text-center text-gray-500">Fecha</div>
+                <div class="hidden md:block p-4 font-bold text-center text-orange-600 col-span-3">🌞 Comida</div>
+                <div class="hidden md:block p-4 font-bold text-center text-indigo-600 col-span-3">🌙 Cena</div>
+            </div>
+
+            <div id="calendar-container">
+                <!-- Javascript will inject rows here -->
+            </div>
+        </div>
+
+        <!-- Batch Cooking Guide -->
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-utensils mr-2"></i>Guía de Cocina (Fin de Semana 10-11)</h2>
+            <div class="prose max-w-none text-gray-600">
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>Base de Carne (Cecotec):</strong> Prepara 1kg+ de carne picada mixta. Condimenta todo junto. Usa la mitad para las <strong>Hamburguesas</strong> (Cena Sábado) y la otra mitad forma las <strong>Albóndigas</strong>. Hornea las albóndigas 15 min para sellar y luego cocínalas en salsa en la Mambo. <span class="text-green-600 font-bold">Congela una ración doble para el día 21.</span></li>
+                    <li><strong>Cremas (Cecotec):</strong> Haz la crema de calabaza entera. Cena un tercio el Domingo, congela 2 tuppers (para día 19 y otro extra). Haz la crema de coliflor entera. Guarda mitad nevera (para Miércoles 14) y congela mitad (para día 20).</li>
+                    <li><strong>Salsa Macarrones l'Avia:</strong> Haz todo el sofrito con la carne/butifarra en la Mambo. Hierve pasta. Mezcla. Gratina una bandeja para el Domingo 11. Guarda/Congela la otra mitad para el día 19 (o congela solo la salsa y hierve pasta al momento el día 19 si prefieres pasta recién hecha).</li>
+                    <li><strong>Falsos Canelones:</strong> Prepara el relleno (pollo/queso/puerro) en la Mambo troceando el puerro y pochando. Rellena las láminas de puerro cocido. Guárdalos en una bandeja apta para horno. <span class="text-blue-600 font-bold">Al congelador directo.</span> El día 21 irán al horno.</li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Template -->
+    <div id="recipe-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-2xl mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6">
+                <!-- Title -->
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold text-deep-green" id="modal-title">Título Receta</p>
+                    <div class="modal-close cursor-pointer z-50" onclick="toggleModal()">
+                        <svg class="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                            <path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Body -->
+                <div id="modal-body">
+                    <!-- Dynamic Content -->
+                </div>
+                <!-- Footer -->
+                <div class="flex justify-end pt-2">
+                    <button onclick="toggleModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        const schedule = [
+            {
+                date: "Sábado 10",
+                lunch: { name: "Libre / Ya pasado", type: "neutral" },
+                dinner: { 
+                    name: "Hamburguesas Caseras Ligeras", 
+                    desc: "Con la carne picada preparada para las albóndigas. Acompañar de chips de boniato al horno.",
+                    prep: "cecotec",
+                    details: "Usa la Mambo para picar ajo, perejil y mezclar la carne con huevo y pan rallado (Velocidad 2-3 con pala amasadora o cuchillas con cuidado). Forma las hamburguesas. Hazlas a la plancha con poco aceite. <br><br><strong>Tip salud:</strong> Acompaña con boniato al horno en bastones en lugar de patatas fritas."
+                }
+            },
+            {
+                date: "Domingo 11",
+                lunch: { 
+                    name: "Macarrones de l'Avia Gratinados", 
+                    desc: "Clásicos con butifarra y pollo. Gratinado suave.",
+                    prep: "oven",
+                    details: "<strong>En Cecotec:</strong> Picar cebolla/zanahoria (Vel 6). Sofreír (120ºC, Potencia 6, Vel 1). Añadir carne de butifarra y pollo picado. Tomate frito casero al final.<br>Mezclar con pasta hervida, bechamel ligera o queso, y gratinar.<br>⚠️ <strong>IMPORTANTE:</strong> Haz el doble de salsa. La mitad se congela para el día 19."
+                },
+                dinner: { 
+                    name: "Crema de Calabaza (Butterpumpkin)", 
+                    desc: "Suave, con un toque de nuez moscada.",
+                    prep: "batch",
+                    details: "<strong>En Cecotec:</strong> Calabaza, patata, puerro, caldo de pollo. Cocer 25 min, 100ºC, Vel 1. Triturar Vel 10 progresiva (con cuidado temperatura).<br>Servir con: virutas de jamón o pipas de calabaza.<br>❄️ <strong>Congelar:</strong> Guarda 2 raciones dobles (para día 19 y reserva)."
+                }
+            },
+            {
+                date: "Lunes 12",
+                lunch: { 
+                    name: "Albóndigas Jardinera con Arroz", 
+                    desc: "Salsa de verduras triturada para que sea ligera.",
+                    prep: "reheat",
+                    details: "Calentar las albóndigas hechas el finde. Hervir arroz blanco fresco (12 mins) o usar vasitos de calidad si hay prisa.<br>La salsa al estar triturada en Mambo es muy digestiva."
+                },
+                dinner: { 
+                    name: "Tortilla Española 'Express'", 
+                    desc: "8 huevos, 900g patata. Jugosa.",
+                    prep: "fresh",
+                    details: "Tu receta clásica. Hazla grande. <br>Coméis la mitad hoy con unos tomates aliñados o aguacate.<br>Guarda la otra mitad en nevera para mañana."
+                }
+            },
+            {
+                date: "Martes 13",
+                lunch: { 
+                    name: "Restos de Tortilla & Ensalada", 
+                    desc: "Comida rápida aprovechando la cena anterior.",
+                    prep: "leftover",
+                    details: "Sacar la tortilla de la nevera 30min antes para que se atempere. Acompañar de algo fresco."
+                },
+                dinner: { 
+                    name: "Dorada al Horno sobre Patata", 
+                    desc: "Cama de patata panadera fina, cebolla juliana y limón.",
+                    prep: "fresh",
+                    details: "Cortar patatas muy finas (mandolina si tienes). Cama de patata y cebolla con un chorrito de aceite y vino blanco. Horno 15 min solas. Poner Dorada encima, rodajas de limón dentro. 15-20 min más.<br>Pescado blanco: proteína ideal y fácil digestión."
+                }
+            },
+            {
+                date: "Miércoles 14",
+                lunch: { 
+                    name: "Raviolis Frescos", 
+                    desc: "Con un chorrito de aceite de oliva y parmesano o salsa ligera.",
+                    prep: "fresh",
+                    details: "Hervir pasta fresca (3-4 mins).<br>Si quieres salsa rápida en Cecotec: Poner nata líquida, queso y pimienta, calentar 4 min 90ºC Vel 2."
+                },
+                dinner: { 
+                    name: "Crema de Coliflor y Patata al Limón", 
+                    desc: "Toque cítrico para enmascarar el sabor fuerte.",
+                    prep: "batch",
+                    details: "Hecha el finde.<br><strong>Truco sabor:</strong> Al calentar, añadir un chorrito de zumo de limón fresco y pimienta blanca. Acompañar de unos dados de pavo o huevo duro picado para añadir proteína."
+                }
+            },
+            {
+                date: "Jueves 15",
+                lunch: { 
+                    name: "Risotto de Setas/Pollo (Cecotec)", 
+                    desc: "Usando la MamboMix para no romper el grano.",
+                    prep: "cecotec",
+                    details: "<strong>Accesorio:</strong> Pala MamboMix (NO cuchillas).<br>1. Sofreír cebolla/ajo.<br>2. Añadir arroz y nacarar 2 min.<br>3. Añadir caldo caliente poco a poco o todo de golpe según receta auto.<br>4. Mantecar con mantequilla y parmesano al acabar.<br>Debe hacerse y comerse al momento."
+                },
+                dinner: { 
+                    name: "Entrecote/Solomillo de Ternera", 
+                    desc: "Carne pura. Plancha fuerte, punto al gusto.",
+                    prep: "fresh",
+                    details: "<strong>Nutrición:</strong> Acompañar de pimientos asados (Vitamina C ayuda a absorber el hierro). Evitar lácteos en esta comida.<br>Es un plato rápido de hacer y os dará energía antes del viaje/parón."
+                }
+            },
+            {
+                date: "Viernes 16", lunch: { name: "❌ NO COMIDA", type: "off" }, dinner: { name: "❌ NO CENA", type: "off" }
+            },
+            {
+                date: "Sábado 17", lunch: { name: "❌ NO COMIDA", type: "off" }, dinner: { name: "❌ NO CENA", type: "off" }
+            },
+            {
+                date: "Domingo 18", lunch: { name: "❌ NO COMIDA", type: "off" }, dinner: { name: "❌ NO CENA", type: "off" }
+            },
+            {
+                date: "Lunes 19",
+                lunch: { 
+                    name: "Parmentier de Butifarra", 
+                    desc: "Base de carne de butifarra, cubierto de puré de patata gratinado.",
+                    prep: "freezer",
+                    details: "<strong>PRE-COCINADO:</strong> Sacar del congelador la noche anterior (domingo).<br>Calentar en Horno 180ºC durante 20 mins.<br>El puré protege la carne y mantiene la jugosidad. Mucho mejor que butifarra sola recalentada."
+                },
+                dinner: { 
+                    name: "Crema de Calabaza", 
+                    desc: "La segunda ración del batch cooking.",
+                    prep: "freezer",
+                    details: "Sacar del congelador por la mañana. Calentar en cazo u olla. Añadir un quesito o chorrito de nata si se ha separado un poco la textura al descongelar."
+                }
+            },
+            {
+                date: "Martes 20",
+                lunch: { 
+                    name: "Macarrones l'Avia (Congelados)", 
+                    desc: "La ración guardada del día 11.",
+                    prep: "freezer",
+                    details: "Si congelaste solo la salsa: Hierve pasta en 10 min y mezcla.<br>Si congelaste todo junto: Descongelar en nevera la noche antes. Horno con un chorrito de agua o leche por encima para rehidratar, tapado con albal los primeros 15 min."
+                },
+                dinner: { 
+                    name: "Crema de Coliflor (Congelada)", 
+                    desc: "Segunda mitad de la crema.",
+                    prep: "freezer",
+                    details: "Sacar del congelador por la mañana. Calentar bien. Acompañar de una tostada con aguacate para cenar bien."
+                }
+            },
+            {
+                date: "Miércoles 21",
+                lunch: { 
+                    name: "Albóndigas (Congeladas)", 
+                    desc: "Ración extra que guardaste el día 10.",
+                    prep: "freezer",
+                    details: "Sacar del congelador noche anterior.<br>Calentar en olla a fuego lento. Si la salsa ha espesado mucho, añadir un dedo de agua.<br>Acompañar de cuscús (se hace en 5 min con agua hirviendo) o arroz."
+                },
+                dinner: { 
+                    name: "Falsos Canelones de Puerro", 
+                    desc: "Rellenos de pollo y philadelphia.",
+                    prep: "freezer",
+                    details: "Deben estar montados en la bandeja desde el finde.<br>Directos al horno (si el recipiente lo permite) o descongelados previamente.<br>Cubrir con un poco de queso rallado y gratinar. Plato reconfortante para cerrar la semana dura."
+                }
+            }
+        ];
+
+        // --- RENDER FUNCTIONS ---
+
+        function renderCalendar() {
+            const container = document.getElementById('calendar-container');
+            let html = '';
+
+            schedule.forEach((day, index) => {
+                if(day.lunch.type === 'off') {
+                    // Render Off Days compressed
+                    html += `
+                    <div class="grid grid-cols-1 md:grid-cols-7 border-b bg-gray-200 text-gray-400 opacity-75">
+                        <div class="p-3 font-bold md:text-center flex justify-between md:block">
+                            <span>${day.date}</span>
+                            <span class="md:hidden">Fuera de casa</span>
+                        </div>
+                        <div class="col-span-6 p-3 text-center text-sm italic hidden md:block">
+                            No planificado (Fuera de casa)
+                        </div>
+                    </div>`;
+                    return;
+                }
+
+                const lunchColor = day.lunch.prep === 'freezer' ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200';
+                const dinnerColor = day.dinner.prep === 'freezer' ? 'bg-blue-50 border-blue-200' : 'bg-indigo-50 border-indigo-200';
+
+                html += `
+                <div class="grid grid-cols-1 md:grid-cols-7 border-b group hover:bg-gray-50 transition">
+                    <!-- Date Column -->
+                    <div class="p-4 flex items-center justify-between md:justify-center font-bold text-gray-700 bg-white md:bg-transparent border-b md:border-none">
+                        <span>${day.date}</span>
+                        ${(day.lunch.prep === 'freezer' || day.dinner.prep === 'freezer') ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full md:hidden">❄️ Congelado</span>' : ''}
+                    </div>
+
+                    <!-- Lunch Column -->
+                    <div class="col-span-3 p-2 md:p-4">
+                        <div onclick="openModal(${index}, 'lunch')" class="recipe-card cursor-pointer h-full p-3 rounded-lg border ${lunchColor} relative">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comida</span>
+                            <h4 class="font-bold text-gray-800">${day.lunch.name}</h4>
+                            <p class="text-sm text-gray-600 mt-1 line-clamp-2">${day.lunch.desc}</p>
+                            ${day.lunch.prep === 'freezer' ? '<div class="absolute top-2 right-2 text-blue-500" title="Desde congelador"><i class="fas fa-snowflake"></i></div>' : ''}
+                            ${day.lunch.prep === 'cecotec' ? '<div class="absolute top-2 right-2 text-orange-500" title="Uso intensivo Cecotec"><i class="fas fa-robot"></i></div>' : ''}
+                        </div>
+                    </div>
+
+                    <!-- Dinner Column -->
+                    <div class="col-span-3 p-2 md:p-4">
+                        <div onclick="openModal(${index}, 'dinner')" class="recipe-card cursor-pointer h-full p-3 rounded-lg border ${dinnerColor} relative">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cena</span>
+                            <h4 class="font-bold text-gray-800">${day.dinner.name}</h4>
+                            <p class="text-sm text-gray-600 mt-1 line-clamp-2">${day.dinner.desc}</p>
+                            ${day.dinner.prep === 'freezer' ? '<div class="absolute top-2 right-2 text-blue-500" title="Desde congelador"><i class="fas fa-snowflake"></i></div>' : ''}
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // --- MODAL LOGIC ---
+
+        function openModal(index, type) {
+            const item = schedule[index][type];
+            document.getElementById('modal-title').innerText = item.name;
+            
+            let badges = '';
+            if(item.prep === 'freezer') badges += '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-2">❄️ Sacar del Congelador</span>';
+            if(item.prep === 'batch') badges += '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-2">🍱 Batch Cooking</span>';
+            if(item.prep === 'cecotec') badges += '<span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded mr-2">🤖 Mambo Cecotec</span>';
+
+            document.getElementById('modal-body').innerHTML = `
+                <div class="mb-4">${badges}</div>
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <h5 class="font-bold text-sm text-gray-500 uppercase mb-2">Descripción</h5>
+                    <p>${item.desc}</p>
+                </div>
+                <div>
+                    <h5 class="font-bold text-sm text-gray-500 uppercase mb-2">Instrucciones / Preparación</h5>
+                    <div class="text-gray-700 leading-relaxed">${item.details}</div>
+                </div>
+            `;
+            
+            toggleModal();
+        }
+
+        function toggleModal() {
+            const body = document.querySelector('body');
+            const modal = document.querySelector('.modal');
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            body.classList.toggle('modal-active');
+        }
+
+        // --- WHATSAPP EXPORT ---
+
+        function exportToWhatsapp() {
+            let text = "*📅 PLAN DE COMIDAS (10-21 Ene)*\n_Objetivo: Sano, digestivo y fácil para la semana del 19_\n\n";
+            
+            schedule.forEach(day => {
+                if(day.lunch.type === 'off') return;
+                
+                text += `*${day.date}*\n`;
+                text += `🌞 ${day.lunch.name}\n`;
+                text += `🌙 ${day.dinner.name}\n`;
+                if(day.date === "Lunes 19" || day.date === "Martes 20" || day.date === "Miércoles 21") {
+                    text += `_⚠️ Comida de Tupper/Congelador_\n`;
+                }
+                text += `\n`;
+            });
+
+            text += "😘 ¡A comer rico y coger fuerzas!";
+
+            // Copy to clipboard logic (since we can't open WA API directly in some iframes cleanly, copy is safer)
+            navigator.clipboard.writeText(text).then(() => {
+                alert("✅ ¡Menú copiado! Abre WhatsApp y pega el mensaje.");
+            }, (err) => {
+                console.error('Error al copiar: ', err);
+                // Fallback specific for mobile if clipboard api fails
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', renderCalendar);
+        
+        // Close modal on escape key
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            var isEscape = false;
+            if ("key" in evt) {
+                isEscape = (evt.key === "Escape" || evt.key === "Esc");
+            } else {
+                isEscape = (evt.keyCode === 27);
+            }
+            if (isEscape && document.querySelector('body.modal-active')) {
+                toggleModal();
+            }
+        };
+
+    </script>
+</body>
+</html>
