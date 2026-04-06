@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Planner Pro - Willy Evrard</title>
+    <title>Room Planner Pro V10 - Willy Evrard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -14,148 +14,514 @@
             background-image: linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
             background-size: 20px 20px;
         }
-        #properties-panel { display: none; transition: opacity 0.2s; }
-        .tool-btn { @apply flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center; }
+        #properties-panel { transition: opacity 0.2s, transform 0.2s; }
+        .tool-btn { @apply flex flex-col items-center justify-center p-2.5 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center shadow-sm bg-white; }
+        .ai-btn-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+        .ai-btn-gradient:hover { background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%); }
+        
+        /* Custom scrollbar for sidebar */
+        aside::-webkit-scrollbar { width: 6px; }
+        aside::-webkit-scrollbar-track { background: transparent; }
+        aside::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
 
+    <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200 z-10 px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <a href="index.html" class="text-gray-400 hover:text-indigo-600"><i class="fas fa-arrow-left"></i></a>
-            <h1 class="text-xl font-bold italic text-indigo-900">Room Planner <span class="font-light">Pro</span></h1>
+            <h1 class="text-xl font-bold italic text-indigo-900 flex items-center">
+                <i class="fas fa-pen-ruler mr-2 text-indigo-500"></i>Room Planner Pro
+                <span class="ml-3 text-xs font-bold text-white bg-indigo-500 px-2 py-0.5 rounded-full not-italic shadow-sm">V10</span>
+            </h1>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="saveDesign()" class="bg-white border px-3 py-2 rounded text-sm hover:bg-gray-50"><i class="fas fa-save text-blue-500 mr-2"></i>Guardar</button>
-            <button onclick="document.getElementById('fileInput').click()" class="bg-white border px-3 py-2 rounded text-sm hover:bg-gray-50"><i class="fas fa-folder-open text-yellow-500 mr-2"></i>Cargar</button>
+            <!-- Herramientas de Deshacer/Rehacer -->
+            <div class="flex bg-gray-100 rounded-md border border-gray-200 mr-2">
+                <button onclick="undo()" class="px-3 py-1.5 text-gray-600 hover:text-indigo-600 hover:bg-gray-200 transition rounded-l-md" title="Deshacer (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                <div class="w-px bg-gray-300"></div>
+                <button onclick="redo()" class="px-3 py-1.5 text-gray-600 hover:text-indigo-600 hover:bg-gray-200 transition rounded-r-md" title="Rehacer (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+            </div>
+
+            <button onclick="saveDesign()" class="bg-white border px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 transition"><i class="fas fa-save text-blue-500 mr-2"></i>Guardar</button>
+            <button onclick="document.getElementById('fileInput').click()" class="bg-white border px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 transition"><i class="fas fa-folder-open text-yellow-500 mr-2"></i>Cargar</button>
             <input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadDesign(event)">
-            <button onclick="exportAsPNG()" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 shadow-md"><i class="fas fa-camera mr-2"></i>Exportar PNG</button>
+            <button onclick="exportAsPNG()" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 transition"><i class="fas fa-camera mr-2"></i>PNG</button>
+            
+            <button onclick="openAIModal()" class="ai-btn-gradient text-white px-4 py-1.5 rounded-md text-sm font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 ml-1">
+                <i class="fas fa-wand-magic-sparkles"></i> 3D (AI)
+            </button>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto p-4 space-y-6">
+        <!-- Sidebar Tools -->
+        <aside class="w-[280px] bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto p-4 space-y-6 shadow-[2px_0_8px_-3px_rgba(0,0,0,0.1)]">
             
+            <!-- Selector de Modo de Navegación -->
+            <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200 shadow-inner">
+                <button id="mode-select" onclick="setMode('select')" class="flex-1 bg-white shadow py-1.5 px-2 rounded-md text-xs font-bold text-indigo-600 transition">
+                    <i class="fas fa-mouse-pointer mr-1"></i> Seleccionar
+                </button>
+                <button id="mode-pan" onclick="setMode('pan')" class="flex-1 py-1.5 px-2 rounded-md text-xs font-bold text-gray-500 hover:text-indigo-600 transition">
+                    <i class="fas fa-hand-paper mr-1"></i> Mover
+                </button>
+            </div>
+
             <div>
-                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Estructura y Sol</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Estructura & Guías</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <button onclick="addWallLine()" class="tool-btn">
-                        <i class="fas fa-grip-lines text-2xl mb-1 text-gray-700"></i>
+                        <i class="fas fa-grip-lines text-2xl mb-2 text-gray-700"></i>
                         <span class="text-[10px] font-bold">PARED</span>
                     </button>
-                    <button onclick="addSun()" class="tool-btn">
-                        <i class="fas fa-sun text-2xl mb-1 text-yellow-500"></i>
-                        <span class="text-[10px] font-bold">SOL/NORTE</span>
-                    </button>
                     <button onclick="addShape('roomfloor')" class="tool-btn">
-                        <i class="fas fa-vector-square text-2xl mb-1 text-gray-400"></i>
+                        <i class="fas fa-vector-square text-2xl mb-2 text-gray-400"></i>
                         <span class="text-[10px] font-bold">SUELO</span>
                     </button>
-                    <button onclick="addRuler()" class="tool-btn">
-                        <i class="fas fa-ruler-horizontal text-2xl mb-1 text-indigo-400"></i>
-                        <span class="text-[10px] font-bold">REGLA</span>
+                    <button onclick="addSun()" class="tool-btn">
+                        <div class="relative w-8 h-8 mb-1 flex items-center justify-center">
+                            <i class="fas fa-certificate text-2xl text-yellow-400 absolute"></i>
+                            <i class="fas fa-sun text-xl text-yellow-500 absolute"></i>
+                        </div>
+                        <span class="text-[10px] font-bold">NORTE / SOL</span>
+                    </button>
+                    <button onclick="addRuler()" class="tool-btn border-indigo-200 bg-indigo-50/50">
+                        <i class="fas fa-ruler-horizontal text-2xl mb-2 text-indigo-500"></i>
+                        <span class="text-[10px] font-bold text-indigo-700">COTA / REGLA</span>
                     </button>
                 </div>
             </div>
 
             <div>
-                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Mobiliario</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Aberturas</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="addShape('door')" class="tool-btn">
+                        <i class="fas fa-door-open text-2xl mb-2 text-stone-600"></i>
+                        <span class="text-[10px] font-bold">PUERTA</span>
+                    </button>
+                    <button onclick="addShape('window')" class="tool-btn">
+                        <i class="fas fa-border-all text-2xl mb-2 text-sky-500"></i>
+                        <span class="text-[10px] font-bold">VENTANA</span>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Mobiliario</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <button onclick="addShape('table')" class="tool-btn">
-                        <i class="fas fa-table text-2xl mb-1 text-amber-700"></i>
+                        <i class="fas fa-table text-2xl mb-2 text-amber-700"></i>
                         <span class="text-[10px] font-bold">MESA</span>
                     </button>
                     <button onclick="addShape('round_table')" class="tool-btn">
-                        <i class="fas fa-circle text-2xl mb-1 text-orange-400"></i>
+                        <i class="fas fa-circle text-2xl mb-2 text-orange-400"></i>
                         <span class="text-[10px] font-bold">M. REDONDA</span>
                     </button>
                     <button onclick="addShape('sofa')" class="tool-btn">
-                        <i class="fas fa-couch text-2xl mb-1 text-pink-500"></i>
+                        <i class="fas fa-couch text-2xl mb-2 text-pink-500"></i>
                         <span class="text-[10px] font-bold">SOFÁ</span>
                     </button>
                     <button onclick="addShape('bed')" class="tool-btn">
-                        <i class="fas fa-bed text-2xl mb-1 text-purple-600"></i>
+                        <i class="fas fa-bed text-2xl mb-2 text-purple-600"></i>
                         <span class="text-[10px] font-bold">CAMA</span>
                     </button>
-                    <button onclick="addShape('chair')" class="tool-btn">
-                        <i class="fas fa-chair text-2xl mb-1 text-emerald-600"></i>
-                        <span class="text-[10px] font-bold">SILLA/BBQ</span>
+                    <button onclick="addShape('chair')" class="tool-btn col-span-2 flex-row gap-3 py-2">
+                        <i class="fas fa-chair text-xl text-emerald-600"></i>
+                        <span class="text-[10px] font-bold">SILLA / BBQ</span>
                     </button>
                 </div>
             </div>
-
-            <div class="p-3 bg-indigo-50 rounded-lg text-[11px] text-indigo-700">
-                <b>Truco:</b> Doble click para editar el texto del mueble. <kbd class="bg-white border px-1">Alt</kbd> + Arrastrar para moverte por el plano.
+            
+            <!-- Leyenda Atajos -->
+            <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl text-[10px] text-gray-500 leading-relaxed mt-auto">
+                <p><b>Ctrl+C / Ctrl+V</b>: Copiar y pegar</p>
+                <p><b>Flechas teclado</b>: Mover 5cm (Shift: 1px)</p>
+                <p><b>Supr</b>: Eliminar</p>
             </div>
         </aside>
 
+        <!-- Canvas Area -->
         <main id="canvas-container" class="canvas-grid-bg">
             <canvas id="c"></canvas>
 
-            <div id="properties-panel" class="absolute top-4 right-4 bg-white p-4 rounded-xl shadow-2xl border border-gray-200 z-20 w-64 opacity-0 pointer-events-none">
-                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 italic">Ajustes de Bloque</h3>
-                <div class="space-y-4">
+            <!-- Properties Panel -->
+            <div id="properties-panel" class="absolute top-4 right-4 bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-2xl border border-gray-200 z-20 w-64 opacity-0 pointer-events-none translate-y-2">
+                <h3 class="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center justify-between text-sm">
+                    <span>Ajustes de Bloque</span>
+                    <i class="fas fa-sliders-h text-gray-400"></i>
+                </h3>
+                <div class="space-y-3">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Color</label>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide">Color Base</label>
                         <div class="flex gap-2 mt-1">
-                            <input type="color" id="obj-color" oninput="updateObjectColor(this.value)" class="w-8 h-8 rounded border-0 cursor-pointer">
-                            <input type="text" id="obj-color-text" class="flex-1 text-xs border-gray-300 rounded font-mono" readonly>
+                            <input type="color" id="obj-color" oninput="updateObjectColor(this.value)" class="w-8 h-8 rounded cursor-pointer p-0 border-0 shadow-sm">
+                            <input type="text" id="obj-color-text" class="flex-1 text-xs border-gray-300 rounded font-mono shadow-sm bg-gray-50 focus:bg-white" readonly>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Nombre/Texto</label>
-                        <input type="text" id="obj-text-input" oninput="updateObjectText(this.value)" class="w-full text-sm border-gray-300 rounded mt-1">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide">Etiqueta / Nombre</label>
+                        <input type="text" id="obj-text-input" oninput="updateObjectText(this.value)" class="w-full text-xs border-gray-300 rounded mt-1 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
                     </div>
-                    <div class="flex gap-2 pt-2">
-                        <button id="btn-lock" onclick="toggleLockSelected()" class="flex-1 bg-gray-100 py-2 rounded text-xs font-bold flex items-center justify-center gap-1">
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wide">Tamaño Texto</label>
+                            <input type="number" id="obj-text-size" oninput="updateObjectProperty('fontSize', this.value)" class="w-full text-xs border-gray-300 rounded mt-1 shadow-sm p-1.5" min="8" max="72">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wide">Rotación (°)</label>
+                            <input type="number" id="obj-rotation" oninput="updateObjectProperty('angle', this.value)" class="w-full text-xs border-gray-300 rounded mt-1 shadow-sm p-1.5">
+                        </div>
+                    </div>
+
+                    <!-- Orden de Capas (Z-Index) -->
+                    <div class="pt-2">
+                        <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wide mb-1">Orden de Capas</label>
+                        <div class="flex gap-1 bg-gray-50 p-1 rounded border border-gray-200">
+                            <button onclick="changeZIndex('back')" class="flex-1 py-1 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 rounded text-xs" title="Al fondo absoluto"><i class="fas fa-layer-group"></i><i class="fas fa-arrow-down text-[9px] ml-0.5"></i></button>
+                            <button onclick="changeZIndex('backward')" class="flex-1 py-1 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 rounded text-xs" title="Atrás (1 nivel)"><i class="fas fa-arrow-down"></i></button>
+                            <button onclick="changeZIndex('forward')" class="flex-1 py-1 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 rounded text-xs" title="Adelante (1 nivel)"><i class="fas fa-arrow-up"></i></button>
+                            <button onclick="changeZIndex('front')" class="flex-1 py-1 text-gray-500 hover:text-indigo-600 hover:bg-gray-200 rounded text-xs" title="Al frente absoluto"><i class="fas fa-layer-group"></i><i class="fas fa-arrow-up text-[9px] ml-0.5"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2 border-t mt-2">
+                        <button id="btn-lock" onclick="toggleLockSelected()" class="flex-1 bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition">
                             <i class="fas fa-lock" id="lock-icon"></i> <span id="lock-text">Fijar</span>
                         </button>
-                        <button onclick="deleteSelected()" class="bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
+                        <button onclick="deleteSelected()" class="bg-red-50 text-red-600 px-3 py-1.5 rounded hover:bg-red-100 transition shadow-sm" title="Eliminar (Supr)"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- AI Feature Modal -->
+    <div id="ai-modal" class="hidden fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform scale-95 transition-transform duration-300" id="ai-modal-content">
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-wand-magic-sparkles text-2xl text-purple-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Generación 3D con IA</h2>
+            <p class="text-gray-600 mb-4 leading-relaxed">
+                Esta función utilizará el plano que estás diseñando como guía estructural (Prompt Visual) para un modelo de IA avanzado. Generará renders fotorealistas de cómo se vería tu habitación en la vida real.
+            </p>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+                <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                <p class="text-sm text-gray-700"><b>Próximamente:</b> Esta integración está en desarrollo para la V11.</p>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeAIModal()" class="bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-800 transition">Entendido</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // --- INICIALIZACIÓN Y VARIABLES GLOBALES ---
         const wrapper = document.getElementById('canvas-container');
+        const propertiesPanel = document.getElementById('properties-panel');
         const canvas = new fabric.Canvas('c', {
             width: wrapper.clientWidth, height: wrapper.clientHeight,
-            selection: true, preserveObjectStacking: true
+            selection: true, preserveObjectStacking: true // Mantiene el Z-index al seleccionar
         });
 
-        const GRID = 20; // 1px = 1cm (aproximado para escala)
+        window.addEventListener('resize', () => {
+            canvas.setWidth(wrapper.clientWidth);
+            canvas.setHeight(wrapper.clientHeight);
+            canvas.renderAll();
+        });
 
-        // --- SISTEMA DE MEDIDAS (FUNDAMENTAL) ---
+        const SNAP_GRID = 5; 
+        let currentMode = 'select'; // 'select' o 'pan'
+        let clipboard = null;
+
+        // --- SISTEMA DE HISTORIAL (UNDO / REDO) ---
+        let stateHistory = [];
+        let historyStep = -1;
+        let isHistoryTracking = false;
+
+        function saveHistory() {
+            if (isHistoryTracking) return;
+            // Si deshicimos y luego hacemos una acción nueva, borrar el "futuro"
+            if (historyStep < stateHistory.length - 1) {
+                stateHistory = stateHistory.slice(0, historyStep + 1);
+            }
+            // Propiedades personalizadas a guardar
+            const json = canvas.toJSON(['label', 'locked', 'customType', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls', 'strokeUniform', 'originalStroke', 'originalStrokeDashArray']);
+            stateHistory.push(JSON.stringify(json));
+            historyStep++;
+        }
+
+        function undo() {
+            if (historyStep > 0) {
+                isHistoryTracking = true;
+                historyStep--;
+                canvas.loadFromJSON(stateHistory[historyStep], () => {
+                    canvas.renderAll();
+                    updatePanel(); // refrescar panel
+                    isHistoryTracking = false;
+                });
+            }
+        }
+
+        function redo() {
+            if (historyStep < stateHistory.length - 1) {
+                isHistoryTracking = true;
+                historyStep++;
+                canvas.loadFromJSON(stateHistory[historyStep], () => {
+                    canvas.renderAll();
+                    updatePanel();
+                    isHistoryTracking = false;
+                });
+            }
+        }
+
+        // Iniciar historial y escuchas
+        setTimeout(saveHistory, 100); // Guardar estado inicial vacío
+        canvas.on('object:added', () => saveHistory());
+        canvas.on('object:removed', () => saveHistory());
+        canvas.on('object:modified', () => saveHistory());
+
+
+        // --- MODOS DE INTERACCIÓN (SELECCIÓN VS NAVEGACIÓN) ---
+        function setMode(mode) {
+            currentMode = mode;
+            const btnSelect = document.getElementById('mode-select');
+            const btnPan = document.getElementById('mode-pan');
+
+            if (mode === 'select') {
+                canvas.selection = true;
+                canvas.defaultCursor = 'default';
+                canvas.getObjects().forEach(obj => { if(!obj.locked) obj.set('selectable', true); });
+                btnSelect.className = "flex-1 bg-white shadow py-1.5 px-2 rounded-md text-xs font-bold text-indigo-600 transition";
+                btnPan.className = "flex-1 py-1.5 px-2 rounded-md text-xs font-bold text-gray-500 hover:text-indigo-600 transition";
+            } else { // pan
+                canvas.selection = false;
+                canvas.defaultCursor = 'grab';
+                canvas.discardActiveObject().renderAll();
+                canvas.getObjects().forEach(obj => obj.set('selectable', false)); // Prevenir clics al mover
+                btnPan.className = "flex-1 bg-white shadow py-1.5 px-2 rounded-md text-xs font-bold text-indigo-600 transition";
+                btnSelect.className = "flex-1 py-1.5 px-2 rounded-md text-xs font-bold text-gray-500 hover:text-indigo-600 transition";
+            }
+        }
+
+        let isPanning = false;
+        canvas.on('mouse:down', function(opt) {
+            if(currentMode === 'pan' || (currentMode === 'select' && opt.e.altKey)) {
+                isPanning = true; 
+                this.selection = false;
+                this.lastPosX = opt.e.clientX; 
+                this.lastPosY = opt.e.clientY;
+                canvas.defaultCursor = 'grabbing';
+            }
+        });
+        canvas.on('mouse:move', function(opt) {
+            if(isPanning) {
+                const vpt = this.viewportTransform;
+                vpt[4] += opt.e.clientX - this.lastPosX; 
+                vpt[5] += opt.e.clientY - this.lastPosY;
+                canvas.requestRenderAll();
+                this.lastPosX = opt.e.clientX; 
+                this.lastPosY = opt.e.clientY;
+            }
+        });
+        canvas.on('mouse:up', function() { 
+            if(isPanning) {
+                isPanning = false;
+                canvas.defaultCursor = currentMode === 'pan' ? 'grab' : 'default';
+                if(currentMode === 'select') this.selection = true;
+            }
+        });
+        canvas.on('mouse:wheel', function(opt) {
+            let zoom = canvas.getZoom() * (0.999 ** opt.e.deltaY);
+            zoom = Math.min(Math.max(zoom, 0.2), 5); 
+            canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+            opt.e.preventDefault(); 
+            opt.e.stopPropagation();
+        });
+
+
+        // --- DIBUJO DE COTAS AUTOMÁTICAS ---
         canvas.on('after:render', function() {
             const activeObj = canvas.getActiveObject();
-            if (!activeObj || activeObj.locked || activeObj.customType === 'regla') return;
+            if (!activeObj || activeObj.type === 'activeSelection' || activeObj.customType === 'regla') return;
 
             const ctx = canvas.contextContainer;
-            const vpt = canvas.viewportTransform;
             ctx.save();
+            const vpt = canvas.viewportTransform;
             ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
 
-            ctx.font = 'bold 12px Arial';
-            ctx.fillStyle = '#4f46e5';
-            ctx.textAlign = 'center';
-
-            // Calcular ancho y alto según escala actual del objeto
             const w = Math.round(activeObj.getScaledWidth());
             const h = Math.round(activeObj.getScaledHeight());
-            
-            // Dibujar etiqueta de ancho (Arriba)
-            ctx.fillText(`${w} cm`, activeObj.left, activeObj.top - (activeObj.getScaledHeight()/2) - 10);
-            
-            // Dibujar etiqueta de alto (Derecha)
-            ctx.save();
-            ctx.translate(activeObj.left + (activeObj.getScaledWidth()/2) + 20, activeObj.top);
-            ctx.rotate(Math.PI / 2);
-            ctx.fillText(`${h} cm`, 0, 0);
-            ctx.restore();
+
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            function drawLabel(text, x, y, angle = 0) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                
+                const textWidth = ctx.measureText(text).width;
+                const pX = -textWidth/2 - 6;
+                const pY = -10;
+                const pW = textWidth + 12;
+                const pH = 20;
+                const radius = 4;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(pX, pY, pW, pH, radius);
+                else ctx.rect(pX, pY, pW, pH); 
+                ctx.fill();
+                
+                ctx.strokeStyle = '#4f46e5'; 
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#4f46e5';
+                ctx.fillText(text, 0, 1); 
+                ctx.restore();
+            }
+
+            if(activeObj.angle === 0) {
+                drawLabel(`${w} cm`, activeObj.left, activeObj.top - (activeObj.getScaledHeight()/2) - 15);
+                drawLabel(`${h} cm`, activeObj.left + (activeObj.getScaledWidth()/2) + 15, activeObj.top, Math.PI / 2);
+            }
 
             ctx.restore();
         });
+
+
+        // --- PREVENCIÓN DE DEFORMACIÓN Y EVENTOS ---
+        canvas.on('object:scaling', function(e) {
+            const obj = e.target;
+            if (!obj) return;
+
+            if (obj.customType === 'mueble') {
+                const textObj = obj.item(1);
+                if (textObj && textObj.type === 'i-text') {
+                    textObj.set({ scaleX: 1 / obj.scaleX, scaleY: 1 / obj.scaleY });
+                }
+            } 
+            else if (obj.customType === 'regla') {
+                const newWidth = Math.round(obj.width * obj.scaleX);
+                const tickL = obj.item(1), tickR = obj.item(2), textObj = obj.item(3);
+                
+                if (textObj) textObj.set({ scaleX: 1 / obj.scaleX, scaleY: 1 / obj.scaleY, text: `${newWidth} cm` });
+                if (tickL && tickR) {
+                    tickL.set({ scaleX: 1 / obj.scaleX, scaleY: 1 / obj.scaleY, left: -(obj.width / 2) });
+                    tickR.set({ scaleX: 1 / obj.scaleX, scaleY: 1 / obj.scaleY, left: (obj.width / 2) });
+                }
+            }
+        });
+
+        canvas.on('mouse:dblclick', function(e) {
+            if(currentMode !== 'select') return;
+            const obj = e.target;
+            if (obj && obj.customType === 'mueble') {
+                const textObj = obj.item(1);
+                if (textObj && textObj.type === 'i-text') {
+                    const currentText = textObj.text;
+                    const newText = prompt("Editar nombre:", currentText);
+                    if (newText !== null && newText.trim() !== "") {
+                        textObj.set('text', newText.toUpperCase());
+                        updatePanel();
+                        canvas.renderAll();
+                        saveHistory();
+                    }
+                }
+            }
+        });
+
+
+        // --- PORTAPAPELES (COPIAR / PEGAR) ---
+        function copy() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                // Clonar objeto (Fabric 5 requiere callback)
+                activeObj.clone(function(cloned) {
+                    clipboard = cloned;
+                }, ['label', 'locked', 'customType', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls', 'strokeUniform']);
+            }
+        }
+
+        function paste() {
+            if (!clipboard) return;
+            clipboard.clone(function(clonedObj) {
+                canvas.discardActiveObject();
+                // Desplazamiento visual
+                clonedObj.set({
+                    left: clonedObj.left + 20,
+                    top: clonedObj.top + 20,
+                    evented: true,
+                });
+                
+                if (clonedObj.type === 'activeSelection') {
+                    clonedObj.canvas = canvas;
+                    clonedObj.forEachObject(function(obj) { canvas.add(obj); });
+                    clonedObj.setCoords();
+                } else {
+                    canvas.add(clonedObj);
+                }
+                
+                // Actualizar portapapeles para futuros pegados en cascada
+                clipboard.top += 20;
+                clipboard.left += 20;
+                
+                canvas.setActiveObject(clonedObj);
+                canvas.requestRenderAll();
+                saveHistory();
+            }, ['label', 'locked', 'customType', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls', 'strokeUniform']);
+        }
+
+
+        // --- ATAJOS DE TECLADO ---
+        window.addEventListener('keydown', (e) => { 
+            const isInput = document.activeElement.tagName === 'INPUT';
+            if (isInput) return;
+
+            // Borrar
+            if(e.key === 'Delete' || e.key === 'Backspace') {
+                deleteSelected(); 
+            }
+            
+            // Copiar / Pegar / Deshacer
+            if(e.ctrlKey || e.metaKey) {
+                if(e.key.toLowerCase() === 'c') { copy(); e.preventDefault(); }
+                if(e.key.toLowerCase() === 'v') { paste(); e.preventDefault(); }
+                if(e.key.toLowerCase() === 'z') { 
+                    if(e.shiftKey) redo(); else undo(); 
+                    e.preventDefault(); 
+                }
+                if(e.key.toLowerCase() === 'y') { redo(); e.preventDefault(); }
+            }
+            
+            // Mover con Flechas (Nudging)
+            const activeObj = canvas.getActiveObject();
+            if(activeObj && !activeObj.locked && currentMode === 'select') {
+                // Shift apretado = Mover 1 pixel. Normal = SNAP_GRID (5cm)
+                const step = e.shiftKey ? 1 : SNAP_GRID; 
+                let moved = false;
+
+                if (e.key === 'ArrowUp') { activeObj.top -= step; moved = true; }
+                else if (e.key === 'ArrowDown') { activeObj.top += step; moved = true; }
+                else if (e.key === 'ArrowLeft') { activeObj.left -= step; moved = true; }
+                else if (e.key === 'ArrowRight') { activeObj.left += step; moved = true; }
+
+                if (moved) {
+                    activeObj.setCoords();
+                    canvas.renderAll();
+                    e.preventDefault();
+                    // Debounce manual para el historial usando timeout para no sobrecargar si deja la tecla presionada
+                    clearTimeout(window.nudgeTimeout);
+                    window.nudgeTimeout = setTimeout(saveHistory, 300);
+                }
+            }
+        });
+
 
         // --- CREACIÓN DE OBJETOS ---
         function getCanvasCenter() {
@@ -165,94 +531,238 @@
 
         function addToCanvas(obj) {
             obj.toObject = (function(toObject) {
-                return function(props) { return fabric.util.object.extend(toObject.call(this, props), { label: this.label, locked: this.locked, customType: this.customType }); };
+                return function(props) { 
+                    return fabric.util.object.extend(toObject.call(this, props), { 
+                        label: this.label, locked: this.locked, customType: this.customType 
+                    }); 
+                };
             })(obj.toObject);
             canvas.add(obj);
             canvas.setActiveObject(obj);
             canvas.renderAll();
         }
 
-        function createMueble(shape, label) {
-            const text = new fabric.IText(label, { fontSize: 14, originX: 'center', originY: 'center', fontFamily: 'Arial' });
+        // Se agregó el parámetro opcional `isFloor`
+        function createMueble(shape, label, centerX, centerY, isFloor = false) {
+            shape.set({ strokeUniform: true, left: 0, top: 0, originX: 'center', originY: 'center' }); 
+            const text = new fabric.IText(label, { 
+                fontSize: isFloor ? 24 : 14, originX: 'center', originY: 'center', left: 0, top: 0, fontFamily: 'Arial, sans-serif', fontWeight: 'bold', fill: isFloor ? '#cbd5e1' : '#1f2937'
+            });
             const group = new fabric.Group([shape, text], {
-                left: shape.left, top: shape.top, originX: 'center', originY: 'center', customType: 'mueble'
+                left: centerX, top: centerY, originX: 'center', originY: 'center', customType: 'mueble'
             });
             addToCanvas(group);
+            if(isFloor) canvas.sendToBack(group);
         }
 
         function addShape(type) {
+            if(currentMode !== 'select') setMode('select'); // Auto-cambio al añadir algo
             const c = getCanvasCenter();
-            let s;
-            const base = { left: c.x, top: c.y, originX: 'center', originY: 'center', fill: '#fff', stroke: '#444', strokeWidth: 2 };
+            const base = { originX: 'center', originY: 'center', fill: '#ffffff', stroke: '#4b5563', strokeWidth: 2, strokeUniform: true };
             
-            if(type === 'table') createMueble(new fabric.Rect({...base, width: 140, height: 80}), 'MESA');
-            if(type === 'round_table') createMueble(new fabric.Circle({...base, radius: 50}), 'MESA R.');
-            if(type === 'sofa') createMueble(new fabric.Rect({...base, width: 180, height: 75, rx: 10, ry: 10, fill: '#fbcfe8'}), 'SOFÁ');
-            if(type === 'bed') createMueble(new fabric.Rect({...base, width: 150, height: 200, fill: '#ddd6fe'}), 'CAMA');
-            if(type === 'chair') createMueble(new fabric.Circle({...base, radius: 25, fill: '#d1fae5'}), 'SILLA');
-            if(type === 'roomfloor') addToCanvas(new fabric.Rect({...base, width: 400, height: 300, fill: '#f8fafc', stroke: '#cbd5e1', label: 'Habitación'}));
+            if(type === 'table') createMueble(new fabric.Rect({...base, width: 140, height: 80, fill: '#fef3c7', stroke: '#d97706'}), 'MESA', c.x, c.y);
+            if(type === 'round_table') createMueble(new fabric.Circle({...base, radius: 50, fill: '#ffedd5', stroke: '#ea580c'}), 'MESA R.', c.x, c.y);
+            if(type === 'sofa') createMueble(new fabric.Rect({...base, width: 180, height: 80, rx: 8, ry: 8, fill: '#fce7f3', stroke: '#db2777'}), 'SOFÁ', c.x, c.y);
+            if(type === 'bed') createMueble(new fabric.Rect({...base, width: 150, height: 200, rx: 4, ry: 4, fill: '#ede9fe', stroke: '#7c3aed'}), 'CAMA', c.x, c.y);
+            if(type === 'chair') createMueble(new fabric.Circle({...base, radius: 25, fill: '#d1fae5', stroke: '#059669'}), 'SILLA', c.x, c.y);
+            
+            if(type === 'roomfloor') {
+                // Ahora el suelo usa createMueble, por lo que su texto SÍ se puede editar.
+                const floorRect = new fabric.Rect({...base, width: 400, height: 300, fill: '#f8fafc', stroke: '#cbd5e1', strokeWidth: 3, strokeDashArray: [10, 5]});
+                createMueble(floorRect, 'HABITACIÓN', c.x, c.y, true);
+            }
+
+            // Aberturas
+            if(type === 'window') {
+                const winGroup = new fabric.Group([
+                    new fabric.Rect({ left: -50, top: -6, width: 100, height: 12, fill: '#f0f9ff', stroke: '#0284c7', strokeWidth: 1.5 }),
+                    new fabric.Rect({ left: -50, top: -1, width: 100, height: 2, fill: '#0284c7' })
+                ], { originX: 'center', originY: 'center' });
+                createMueble(winGroup, '', c.x, c.y);
+            }
+            if(type === 'door') {
+                const doorGroup = new fabric.Group([
+                    new fabric.Path('M 0 0 A 40 40 0 0 1 40 40 L 0 40 Z', { fill: '#f1f5f9', stroke: '#94a3b8', strokeWidth: 1.5, strokeDashArray: [4, 4] }),
+                    new fabric.Rect({ left: 0, top: 0, width: 4, height: 40, fill: '#334155' })
+                ], { originX: 'center', originY: 'center' });
+                createMueble(doorGroup, '', c.x, c.y);
+            }
         }
 
         function addWallLine() {
+            if(currentMode !== 'select') setMode('select');
             const c = getCanvasCenter();
-            addToCanvas(new fabric.Rect({ left: c.x, top: c.y, width: 200, height: 10, fill: '#1f2937', originX: 'center', originY: 'center' }));
+            addToCanvas(new fabric.Rect({ 
+                left: c.x, top: c.y, width: 250, height: 10, fill: '#1f2937', originX: 'center', originY: 'center', strokeUniform: true
+            }));
         }
 
+        // Icono de Sol Renovado
         function addSun() {
+            if(currentMode !== 'select') setMode('select');
             const c = getCanvasCenter();
-            const sunBody = new fabric.Circle({ radius: 25, fill: '#fef3c7', stroke: '#fbbf24', strokeWidth: 2 });
-            const arrow = new fabric.Triangle({ width: 15, height: 15, fill: '#fbbf24', top: -40, left: 0, originX: 'center' });
-            const label = new fabric.IText('NORTE / SOL', { fontSize: 10, top: 10, originX: 'center', fontWeight: 'bold' });
-            addToCanvas(new fabric.Group([sunBody, arrow, label], { left: c.x, top: c.y, originX: 'center', originY: 'center' }));
+            const objs = [];
+            
+            // Círculo central
+            objs.push(new fabric.Circle({ radius: 18, fill: '#fef08a', stroke: '#eab308', strokeWidth: 2, originX: 'center', originY: 'center' }));
+            
+            // Rayos
+            for(let i=0; i<8; i++) {
+                const angle = (i * 45) * Math.PI / 180;
+                const r1 = 22, r2 = 30;
+                objs.push(new fabric.Line([Math.cos(angle)*r1, Math.sin(angle)*r1, Math.cos(angle)*r2, Math.sin(angle)*r2], {
+                    stroke: '#eab308', strokeWidth: 2, originX: 'center', originY: 'center'
+                }));
+            }
+            
+            // Flecha Norte y Texto
+            objs.push(new fabric.Triangle({ width: 14, height: 14, fill: '#ea580c', top: -45, originX: 'center', originY: 'center' }));
+            objs.push(new fabric.IText('N', { fontSize: 16, top: 0, originX: 'center', originY: 'center', fontWeight: 'bold', fill: '#854d0e', fontFamily: 'Arial' }));
+            
+            const group = new fabric.Group(objs, { left: c.x, top: c.y, originX: 'center', originY: 'center', customType: 'sun' });
+            addToCanvas(group);
         }
 
         function addRuler() {
+            if(currentMode !== 'select') setMode('select');
             const c = getCanvasCenter();
-            const rect = new fabric.Rect({ width: 300, height: 20, fill: '#fef08a', stroke: '#ca8a04' });
-            const text = new fabric.IText('300cm', { fontSize: 12, left: 10, top: 4, fontWeight: 'bold' });
-            const ruler = new fabric.Group([rect, text], { left: c.x, top: c.y, customType: 'regla' });
-            ruler.setControlsVisibility({ mt: false, mb: false });
+            const rulerLine = new fabric.Rect({ width: 300, height: 1, fill: '#2563eb', originX: 'center', originY: 'center', strokeUniform: true });
+            const tickL = new fabric.Rect({ width: 1, height: 12, fill: '#2563eb', originX: 'center', originY: 'center', left: -150 });
+            const tickR = new fabric.Rect({ width: 1, height: 12, fill: '#2563eb', originX: 'center', originY: 'center', left: 150 });
+            
+            const text = new fabric.IText('300 cm', { 
+                fontSize: 12, originX: 'center', originY: 'center', top: -12, fontWeight: 'bold', fill: '#1e40af', fontFamily: 'Arial, sans-serif' 
+            });
+            
+            const ruler = new fabric.Group([rulerLine, tickL, tickR, text], { 
+                left: c.x, top: c.y, customType: 'regla' 
+            });
+            
+            ruler.setControlsVisibility({ mt: false, mb: false, tl: false, tr: false, bl: false, br: false, mtr: true });
             addToCanvas(ruler);
         }
 
-        // --- LÓGICA DE INTERACCIÓN ---
+        // --- MANEJO DEL PANEL Y PROPIEDADES ---
         canvas.on('object:moving', (e) => {
-            e.target.set({ left: Math.round(e.target.left / GRID) * GRID, top: Math.round(e.target.top / GRID) * GRID });
+            // Snap afinado a 5cm
+            e.target.set({ 
+                left: Math.round(e.target.left / SNAP_GRID) * SNAP_GRID, 
+                top: Math.round(e.target.top / SNAP_GRID) * SNAP_GRID 
+            });
         });
 
         canvas.on('selection:created', updatePanel);
         canvas.on('selection:updated', updatePanel);
-        canvas.on('selection:cleared', () => { propertiesPanel.style.opacity = '0'; propertiesPanel.style.pointerEvents = 'none'; });
+        canvas.on('selection:cleared', () => { 
+            propertiesPanel.style.opacity = '0'; 
+            propertiesPanel.style.transform = 'translateY(10px)';
+            propertiesPanel.style.pointerEvents = 'none'; 
+        });
+
+        canvas.on('object:rotating', (e) => {
+            if (propertiesPanel.style.opacity === '1') {
+                document.getElementById('obj-rotation').value = Math.round(e.target.angle) % 360;
+            }
+        });
 
         function updatePanel() {
             const obj = canvas.getActiveObject();
-            if(!obj) return;
-            propertiesPanel.style.display = 'block';
-            setTimeout(() => { propertiesPanel.style.opacity = '1'; propertiesPanel.style.pointerEvents = 'auto'; }, 10);
+            if(!obj || obj.type === 'activeSelection') return;
             
-            const shape = obj.item ? obj.item(0) : obj;
-            const text = obj.item ? obj.item(1) : null;
+            propertiesPanel.style.opacity = '1'; 
+            propertiesPanel.style.transform = 'translateY(0)';
+            propertiesPanel.style.pointerEvents = 'auto'; 
             
-            document.getElementById('obj-color').value = shape.fill || '#000000';
+            let shape = obj;
+            let text = null;
+
+            if (obj.customType === 'mueble') {
+                shape = obj.item(0);
+                text = obj.item(1) && obj.item(1).type === 'i-text' ? obj.item(1) : null;
+            } else if (obj.customType === 'regla') {
+                shape = obj.item(0);
+                text = obj.item(3);
+            }
+            
+            const colorInput = document.getElementById('obj-color');
+            const textInput = document.getElementById('obj-text-input');
+            const sizeInput = document.getElementById('obj-text-size');
+            const rotInput = document.getElementById('obj-rotation');
+            
+            colorInput.value = shape.fill || '#000000';
             document.getElementById('obj-color-text').value = String(shape.fill).toUpperCase();
-            document.getElementById('obj-text-input').value = text ? text.text : (obj.text || "");
+            rotInput.value = Math.round(obj.angle || 0) % 360;
+            
+            if (text) {
+                textInput.value = text.text;
+                textInput.disabled = false;
+                sizeInput.value = text.fontSize || 14;
+                sizeInput.disabled = false;
+            } else {
+                textInput.value = obj.label || "";
+                textInput.disabled = true;
+                sizeInput.value = "";
+                sizeInput.disabled = true;
+            }
             
             const isLocked = obj.locked;
             document.getElementById('lock-text').innerText = isLocked ? "Desbloquear" : "Fijar";
-            document.getElementById('btn-lock').className = isLocked ? "flex-1 bg-red-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1" : "flex-1 bg-gray-100 py-2 rounded text-xs font-bold flex items-center justify-center gap-1";
+            document.getElementById('btn-lock').className = isLocked 
+                ? "flex-1 bg-red-50 text-red-600 border border-red-200 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition" 
+                : "flex-1 bg-gray-100 hover:bg-gray-200 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition text-gray-700";
+        }
+
+        // Orden de Capas
+        function changeZIndex(action) {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            if(action === 'back') canvas.sendToBack(obj);
+            if(action === 'backward') canvas.sendBackwards(obj);
+            if(action === 'forward') canvas.bringForward(obj);
+            if(action === 'front') canvas.bringToFront(obj);
+            
+            // Garantizar que la grilla siempre esté en el fondo enviando los pisos muy atrás?
+            // El usuario ahora tiene control total manual.
+            canvas.renderAll();
+            saveHistory();
         }
 
         function updateObjectColor(c) {
             const obj = canvas.getActiveObject();
             if(!obj) return;
-            (obj.item ? obj.item(0) : obj).set('fill', c);
+            const target = (obj.customType === 'mueble' || obj.customType === 'regla') ? obj.item(0) : obj;
+            target.set('fill', c);
             document.getElementById('obj-color-text').value = c.toUpperCase();
             canvas.renderAll();
+            saveHistory();
         }
 
         function updateObjectText(v) {
             const obj = canvas.getActiveObject();
-            if(obj && obj.item && obj.item(1)) { obj.item(1).set('text', v); canvas.renderAll(); }
+            if(!obj) return;
+            const textObj = (obj.customType === 'regla') ? obj.item(3) : (obj.item && obj.item(1));
+            if(textObj && textObj.type === 'i-text') { 
+                textObj.set('text', v.toUpperCase()); 
+                canvas.renderAll(); 
+                clearTimeout(window.textTimeout);
+                window.textTimeout = setTimeout(saveHistory, 500); // Debounce
+            }
+        }
+
+        function updateObjectProperty(prop, value) {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            
+            if (prop === 'fontSize') {
+                const textObj = (obj.customType === 'regla') ? obj.item(3) : (obj.item && obj.item(1));
+                if (textObj && textObj.type === 'i-text') {
+                    textObj.set('fontSize', parseInt(value, 10) || 14);
+                }
+            } else if (prop === 'angle') {
+                obj.set('angle', parseInt(value, 10) || 0);
+            }
+            canvas.renderAll();
+            saveHistory();
         }
 
         function toggleLockSelected() {
@@ -260,62 +770,73 @@
             if(!obj) return;
             const newState = !obj.locked;
             obj.locked = newState;
-            const p = ['lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls'];
+            
+            const p = ['lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY'];
             p.forEach(prop => obj[prop] = newState);
-            obj.set('stroke', newState ? '#ef4444' : '#444');
-            obj.set('strokeDashArray', newState ? [5, 5] : null);
-            canvas.discardActiveObject().renderAll();
+            obj.hasControls = !newState; 
+            
+            const shape = (obj.customType === 'mueble' || obj.customType === 'regla') ? obj.item(0) : obj;
+            
+            if(!shape.originalStroke) shape.originalStroke = shape.stroke || '#4b5563';
+            if(!shape.originalStrokeDashArray) shape.originalStrokeDashArray = shape.strokeDashArray || null;
+            
+            shape.set('stroke', newState ? '#ef4444' : shape.originalStroke);
+            shape.set('strokeDashArray', newState ? [5, 5] : shape.originalStrokeDashArray);
+
+            canvas.requestRenderAll();
+            updatePanel();
+            saveHistory();
         }
 
-        // --- NAVEGACIÓN (PAN & ZOOM) ---
-        let isPanning = false;
-        canvas.on('mouse:down', function(opt) {
-            if(!opt.target || opt.e.altKey || opt.target.locked) {
-                isPanning = true; this.selection = false;
-                this.lastPosX = opt.e.clientX; this.lastPosY = opt.e.clientY;
-            }
-        });
-        canvas.on('mouse:move', function(opt) {
-            if(isPanning) {
-                const vpt = this.viewportTransform;
-                vpt[4] += opt.e.clientX - this.lastPosX; vpt[5] += opt.e.clientY - this.lastPosY;
-                canvas.requestRenderAll();
-                this.lastPosX = opt.e.clientX; this.lastPosY = opt.e.clientY;
-            }
-        });
-        canvas.on('mouse:up', function() { isPanning = false; this.selection = true; });
-
-        canvas.on('mouse:wheel', function(opt) {
-            let zoom = canvas.getZoom() * (0.999 ** opt.e.deltaY);
-            zoom = Math.min(Math.max(zoom, 0.2), 4);
-            canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-            opt.e.preventDefault(); opt.e.stopPropagation();
-        });
-
-        // --- ARCHIVOS ---
+        // --- SISTEMA DE ARCHIVOS Y EXPORTACIÓN ---
         function saveDesign() {
-            const json = JSON.stringify(canvas.toJSON(['label', 'locked', 'customType', 'lockMovementX', 'lockMovementY', 'hasControls']));
+            const json = JSON.stringify(canvas.toJSON(['label', 'locked', 'customType', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls', 'strokeUniform', 'originalStroke', 'originalStrokeDashArray']));
             const blob = new Blob([json], { type: "application/json" });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plano.json'; a.click();
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blob); 
+            a.download = 'mi_plano_v10.json'; 
+            a.click();
         }
+
         function loadDesign(e) {
             const reader = new FileReader();
-            reader.onload = (f) => canvas.loadFromJSON(f.target.result, () => canvas.renderAll());
-            reader.readAsText(e.target.files[0]);
+            reader.onload = (f) => canvas.loadFromJSON(f.target.result, () => {
+                canvas.renderAll();
+                saveHistory(); // Reiniciar historial
+            });
+            if (e.target.files[0]) reader.readAsText(e.target.files[0]);
         }
+
         function exportAsPNG() {
-            canvas.discardActiveObject();
+            canvas.discardActiveObject(); 
+            canvas.renderAll();
             setTimeout(() => {
-                const link = document.createElement('a'); link.download = 'plano.png';
+                const link = document.createElement('a'); 
+                link.download = 'render_plano_v10.png';
                 link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
                 link.click();
             }, 100);
         }
+
         function deleteSelected() {
-            canvas.getActiveObjects().forEach(o => { if(!o.locked) canvas.remove(o); });
-            canvas.discardActiveObject().renderAll();
+            const activeObjects = canvas.getActiveObjects();
+            if (activeObjects.length) {
+                activeObjects.forEach(o => { if(!o.locked) canvas.remove(o); });
+                canvas.discardActiveObject().renderAll();
+            }
         }
-        window.addEventListener('keydown', (e) => { if(e.key === 'Delete') deleteSelected(); });
+
+        // --- MODAL DE IA ---
+        const aiModal = document.getElementById('ai-modal');
+        const aiModalContent = document.getElementById('ai-modal-content');
+        function openAIModal() {
+            aiModal.classList.remove('hidden');
+            setTimeout(() => { aiModal.classList.remove('opacity-0'); aiModalContent.classList.remove('scale-95'); }, 10);
+        }
+        function closeAIModal() {
+            aiModal.classList.add('opacity-0'); aiModalContent.classList.add('scale-95');
+            setTimeout(() => { aiModal.classList.add('hidden'); }, 300);
+        }
     </script>
 </body>
 </html>
