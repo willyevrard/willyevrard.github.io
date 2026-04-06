@@ -1,253 +1,185 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Room Layout Planner Pro</title>
+    <title>Room Planner Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --panel-bg: #ffffff;
-            --accent-color: #4f46e5;
-            --text-color: #1f2937;
-            --border-color: #e5e7eb;
-        }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f1f5f9;
         }
-        header {
-            background-color: var(--panel-bg);
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
-            text-align: center;
-        }
-        h1 { font-size: 1.2rem; font-weight: 600; }
+        /* Ocultar barra de scroll en el canvas pero permitir que se mueva */
+        .canvas-area::-webkit-scrollbar { display: none; }
+        .canvas-area { -ms-overflow-style: none; scrollbar-width: none; }
         
-        #app-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        /* Sidebar / Controls */
-        #controls {
-            width: 340px;
-            background-color: var(--panel-bg);
-            border-right: 1px solid var(--border-color);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow-y: auto;
-            z-index: 10;
-        }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #4b5563;
-        }
-        input, select, button {
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 0.9rem;
-            outline: none;
-        }
-        input:focus, select:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
-        }
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        button {
-            background-color: var(--accent-color);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.9; }
-        button.secondary {
-            background-color: #e5e7eb;
-            color: #1f2937;
-        }
-        
-        /* Canvas Area */
-        #canvas-container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #eaeaea;
-            overflow: auto;
-            position: relative;
-            padding: 20px;
-        }
         canvas {
-            background-color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            touch-action: none; 
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            cursor: grab;
         }
-        
-        .tip {
-            font-size: 0.75rem;
-            color: #6b7280;
-            font-style: italic;
-        }
-
-        /* Responsive Mobile Layout */
-        @media (max-width: 768px) {
-            #app-container { flex-direction: column; }
-            #controls {
-                width: 100%;
-                height: 45%;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-            #canvas-container { height: 55%; }
-        }
+        canvas:active { cursor: grabbing; }
     </style>
 </head>
-<body>
+<body class="flex flex-col md:flex-row h-screen overflow-hidden">
 
-    <header>
-        <h1>Room Layout Planner Pro</h1>
-    </header>
+    <div class="w-full md:w-80 bg-white border-b md:border-r border-slate-200 flex flex-col h-1/2 md:h-full z-10 shadow-lg">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-couch text-indigo-600"></i> Room Planner Pro
+            </h1>
+        </div>
 
-    <div id="app-container">
-        <div id="controls">
-            <div class="form-group">
-                <label>Element Type</label>
-                <select id="shapeType" onchange="toggleInputs()">
-                    <option value="rect">Rectangle / Square</option>
-                    <option value="circle">Circle</option>
-                    <option value="semicircle">Semicircle (180°)</option>
-                    <option value="quarter">Quarter Circle (90°)</option>
-                    <option value="line">Wall / Line</option>
-                    <option value="sun">Sun Orientation</option>
-                    <option value="text">Free Text Note</option>
+        <div class="p-4 flex-1 overflow-y-auto space-y-4">
+            
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase">Elemento</label>
+                <select id="shapeType" onchange="toggleInputs()" class="w-full mt-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm">
+                    <option value="rect">Rectángulo / Mesa</option>
+                    <option value="circle">Círculo / Sombrilla</option>
+                    <option value="quarter">Puerta / Arco</option>
+                    <option value="sun">Orientación Solar</option>
+                    <option value="text">Anotación de Texto</option>
                 </select>
             </div>
 
-            <div class="form-group" id="groupW">
-                <label id="labelW">Width / Length (cm)</label>
-                <input type="number" id="inputW" value="100">
+            <div class="grid grid-cols-2 gap-3">
+                <div id="groupW">
+                    <label id="labelW" class="text-xs font-bold text-slate-500 uppercase">Ancho (cm)</label>
+                    <input type="number" id="inputW" value="100" class="w-full mt-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+                </div>
+                <div id="groupH">
+                    <label id="labelH" class="text-xs font-bold text-slate-500 uppercase">Alto (cm)</label>
+                    <input type="number" id="inputH" value="100" class="w-full mt-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+                </div>
             </div>
 
-            <div class="form-group" id="groupH">
-                <label id="labelH">Height / Radius (cm)</label>
-                <input type="number" id="inputH" value="100">
+            <div id="groupText">
+                <label class="text-xs font-bold text-slate-500 uppercase">Texto / Nombre</label>
+                <input type="text" id="inputText" value="Objeto" class="w-full mt-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
             </div>
 
-            <div class="form-group" id="groupAngle">
-                <label>Rotation Angle (0 - 360°)</label>
-                <input type="range" id="inputAngle" min="0" max="360" value="0" oninput="updateAngleLabel(this.value)">
-                <span id="angleValue" style="font-size:0.8rem; text-align:right; color:#6b7280;">0°</span>
+            <div id="groupColor">
+                <label class="text-xs font-bold text-slate-500 uppercase">Color</label>
+                <div class="grid grid-cols-5 gap-2 mt-1">
+                    <button class="w-full h-8 rounded-md bg-indigo-500/60 border-2 border-indigo-600" onclick="setColor('rgba(99, 102, 241, 0.6)')"></button>
+                    <button class="w-full h-8 rounded-md bg-emerald-500/60" onclick="setColor('rgba(16, 185, 129, 0.6)')"></button>
+                    <button class="w-full h-8 rounded-md bg-rose-500/60" onclick="setColor('rgba(239, 68, 68, 0.6)')"></button>
+                    <button class="w-full h-8 rounded-md bg-amber-500/60" onclick="setColor('rgba(245, 158, 11, 0.6)')"></button>
+                    <button class="w-full h-8 rounded-md bg-slate-400/60" onclick="setColor('rgba(148, 163, 184, 0.6)')"></button>
+                </div>
+                <input type="hidden" id="inputColor" value="rgba(99, 102, 241, 0.6)">
             </div>
 
-            <div class="form-group" id="groupText">
-                <label>Label / Text</label>
-                <input type="text" id="inputText" value="My Object">
+            <button onclick="addShape()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-3 rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                <i class="fas fa-plus"></i> Añadir al Canvas
+            </button>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="deleteSelected()" class="bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-600 font-bold p-2.5 rounded-lg transition-colors text-xs">
+                    <i class="fas fa-trash-alt mr-1"></i> Borrar
+                </button>
+                <button onclick="resetDefault()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold p-2.5 rounded-lg transition-colors text-xs">
+                    <i class="fas fa-undo mr-1"></i> Reiniciar
+                </button>
             </div>
 
-            <div class="form-group" id="groupColor">
-                <label>Color</label>
-                <select id="inputColor">
-                    <option value="rgba(79, 70, 229, 0.6)">Indigo</option>
-                    <option value="rgba(16, 185, 129, 0.6)">Green (Plants)</option>
-                    <option value="rgba(239, 68, 68, 0.6)">Red</option>
-                    <option value="rgba(245, 158, 11, 0.6)">Orange (Sun)</option>
-                    <option value="rgba(107, 114, 128, 0.6)">Gray</option>
-                    <option value="none">None (Outline only)</option>
-                </select>
+            <hr class="border-slate-100">
+
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="saveLayout()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold p-2.5 rounded-lg transition-colors text-xs">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+                <button onclick="document.getElementById('loadFile').click()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold p-2.5 rounded-lg transition-colors text-xs">
+                    <i class="fas fa-folder-open mr-1"></i> Abrir
+                </button>
             </div>
+            
+            <button onclick="exportImage()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold p-2.5 rounded-lg transition-colors text-xs">
+                <i class="fas fa-file-image mr-1"></i> Exportar como Imagen
+            </button>
 
-            <button onclick="addShape()">Add to Layout</button>
-            <div class="row">
-                <button class="secondary" onclick="deleteSelected()">Delete Selected</button>
-                <button class="secondary" onclick="resetDefault()">Reset Default</button>
+            <input type="file" id="loadFile" class="hidden" onchange="loadLayout(this)" accept=".json">
+
+            <div class="bg-amber-50 p-3 rounded-lg border border-amber-100">
+                <p class="text-xs text-amber-700"><i class="fas fa-lightbulb mr-1"></i> <strong>Tip:</strong> Toca un objeto para seleccionarlo. Arrástralo para moverlo y usa el <strong>tirador superior</strong> para rotarlo.</p>
             </div>
+        </div>
+    </div>
 
-            <hr style="border: 0.5px solid var(--border-color);">
-            <div class="row">
-                <button class="secondary" onclick="saveLayout()">Save Layout</button>
-                <button class="secondary" onclick="document.getElementById('loadFile').click()">Open Layout</button>
-            </div>
-            <button class="secondary" onclick="exportImage()" style="background-color: #10b981; color: white;">Export as Image</button>
-
-            <input type="file" id="loadFile" style="display:none;" onchange="loadLayout(this)" accept=".json">
-
-            <p class="tip">Tip: Tap an element to select it. Drag to move. Items snap to a 10cm grid. You can rotate shapes using the slider!</p>
+    <div class="flex-1 bg-slate-100 p-4 flex justify-center items-center overflow-auto canvas-area relative h-1/2 md:h-full">
+        
+        <div class="absolute top-6 right-6 flex flex-col gap-2 z-10">
+            <button onclick="zoomIn()" class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button onclick="zoomOut()" class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors">
+                <i class="fas fa-minus"></i>
+            </button>
+            <div id="zoomText" class="bg-white px-2 py-1 rounded shadow-sm text-xs font-bold text-slate-500 text-center">100%</div>
         </div>
 
-        <div id="canvas-container">
-            <canvas id="gridCanvas" width="700" height="800"></canvas>
-        </div>
+        <canvas id="gridCanvas" width="800" height="800"></canvas>
     </div>
 
     <script>
         const canvas = document.getElementById('gridCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Scale: 1px = 0.5cm (meaning 2px = 1cm). 
-        const SCALE = 2; 
-        const GRID_SIZE = 10; // Grid every 10cm
+        // El factor de escala original: 1px = 0.5cm (es decir, 2px por cada cm).
+        const BASE_SCALE = 2; 
+        const GRID_SIZE = 10; // Un cuadro cada 10cm
         
+        let zoom = 1.0; // Factor de zoom dinámico
         let shapes = [];
         let selectedIndex = -1;
         let isDragging = false;
+        let isRotating = false;
         let dragOffset = { x: 0, y: 0 };
-
-        function updateAngleLabel(val) {
-            document.getElementById('angleValue').innerText = val + '°';
+        
+        // Cambiar color activo
+        function setColor(color) {
+            document.getElementById('inputColor').value = color;
+            const buttons = document.querySelectorAll('#groupColor button');
+            buttons.forEach(btn => btn.style.border = 'none');
+            event.target.style.border = '2px solid #4f46e5';
+            
+            if (selectedIndex >= 0) {
+                shapes[selectedIndex].fill = color;
+                draw();
+            }
         }
 
-        // Default layout coordinates matching your sketch
+        function zoomIn() { if (zoom < 2.5) { zoom += 0.1; draw(); updateZoomLabel(); } }
+        function zoomOut() { if (zoom > 0.4) { zoom -= 0.1; draw(); updateZoomLabel(); } }
+        function updateZoomLabel() {
+            document.getElementById('zoomText').innerText = Math.round(zoom * 100) + '%';
+        }
+
+        // Diseño predeterminado basado en tus medidas reales
         function resetDefault() {
             shapes = [
-                // Main Balcony Area (230cm x 310cm)
-                { type: 'rect', x: 20, y: 20, w: 230, h: 310, fill: 'rgba(230, 230, 230, 0.3)', stroke: '#1f2937', label: 'Balcony Base', angle: 0 },
+                // Base del Balcón (230cm x 310cm)
+                { type: 'rect', x: 200, y: 200, w: 230, h: 310, fill: 'rgba(230, 230, 230, 0.4)', stroke: '#64748b', label: 'Balcón Principal', angle: 0 },
                 
-                // Left Pillars (45cm x 20cm)
-                { type: 'rect', x: 20, y: 20, w: 45, h: 20, fill: 'rgba(107, 114, 128, 0.8)', stroke: '#1f2937', label: 'Pillar', angle: 0 },
-                { type: 'rect', x: 20, y: 310, w: 45, h: 20, fill: 'rgba(107, 114, 128, 0.8)', stroke: '#1f2937', label: 'Pillar', angle: 0 },
+                // Pilares izquierdos (45cm x 20cm)
+                { type: 'rect', x: 102.5, y: 65, w: 45, h: 20, fill: 'rgba(148, 163, 184, 0.8)', stroke: '#475569', label: 'Pilar', angle: 0 },
+                { type: 'rect', x: 102.5, y: 335, w: 45, h: 20, fill: 'rgba(148, 163, 184, 0.8)', stroke: '#475569', label: 'Pilar', angle: 0 },
                 
-                // Right Window Shades (30cm deep, 80cm and 70cm long)
-                { type: 'rect', x: 220, y: 20, w: 30, h: 80, fill: 'rgba(209, 213, 219, 0.8)', stroke: '#1f2937', label: 'Shade', angle: 0 },
-                { type: 'rect', x: 220, y: 260, w: 30, h: 70, fill: 'rgba(209, 213, 219, 0.8)', stroke: '#1f2937', label: 'Shade', angle: 0 },
+                // Huecos/Sombras pared derecha (30cm de grosor, 80cm y 70cm de largo)
+                { type: 'rect', x: 300, y: 85, w: 30, h: 80, fill: 'rgba(209, 213, 219, 0.8)', stroke: '#475569', label: 'Hueco', angle: 0 },
+                { type: 'rect', x: 300, y: 315, w: 30, h: 70, fill: 'rgba(209, 213, 219, 0.8)', stroke: '#475569', label: 'Hueco', angle: 0 },
                 
-                // Quarter circles representing the doors opening inward (40cm radius)
-                { type: 'quarter', x: 250, y: 140, r: 40, fill: 'none', stroke: '#ef4444', label: 'Door Arc', angle: 180 },
-                { type: 'quarter', x: 250, y: 180, r: 40, fill: 'none', stroke: '#ef4444', label: 'Door Arc', angle: 180 },
-                { type: 'quarter', x: 250, y: 220, r: 40, fill: 'none', stroke: '#ef4444', label: 'Door Arc', angle: 180 },
-
-                // Default Sun Indicator
-                { type: 'sun', x: 300, y: 80, r: 25, fill: 'rgba(245, 158, 11, 0.6)', stroke: '#b45309', label: 'Afternoon Sun', angle: 225 },
+                // Puertas en la derecha que abren hacia adentro
+                { type: 'quarter', x: 315, y: 165, r: 40, fill: 'none', stroke: '#ef4444', label: 'Puerta', angle: 180 },
+                { type: 'quarter', x: 315, y: 205, r: 40, fill: 'none', stroke: '#ef4444', label: 'Puerta', angle: 180 },
                 
-                // Default Note
-                { type: 'text', x: 120, y: 180, label: 'Central Chill Area', angle: 0 }
+                // Un sol para la orientación
+                { type: 'sun', x: 400, y: 250, r: 25, fill: 'rgba(245, 158, 11, 0.6)', stroke: '#b45309', label: 'Sol de Tarde', angle: 225 }
             ];
             selectedIndex = -1;
             draw();
@@ -255,41 +187,26 @@
 
         function toggleInputs() {
             const type = document.getElementById('shapeType').value;
-            
             const groupW = document.getElementById('groupW');
             const groupH = document.getElementById('groupH');
-            const groupText = document.getElementById('groupText');
-            const groupColor = document.getElementById('groupColor');
-            const groupAngle = document.getElementById('groupAngle');
-            
             const labelW = document.getElementById('labelW');
-            const labelH = document.getElementById('labelH');
             
-            // Reset displays
-            groupW.style.display = 'flex';
-            groupH.style.display = 'flex';
-            groupText.style.display = 'flex';
-            groupColor.style.display = 'flex';
-            groupAngle.style.display = 'flex';
+            groupW.classList.remove('hidden');
+            groupH.classList.remove('hidden');
             
-            if (type === 'circle' || type === 'semicircle' || type === 'quarter') {
-                groupH.style.display = 'none';
-                labelW.innerText = 'Radius (cm)';
-            } else if (type === 'line') {
-                labelW.innerText = 'Length (cm)';
-                groupH.style.display = 'none';
+            if (type === 'circle' || type === 'quarter') {
+                groupH.classList.add('hidden');
+                labelW.innerText = 'Radio (cm)';
             } else if (type === 'sun') {
-                groupH.style.display = 'none';
-                labelW.innerText = 'Size Radius (cm)';
-                document.getElementById('inputText').value = "Sun Direction";
+                groupH.classList.add('hidden');
+                labelW.innerText = 'Tamaño (cm)';
+                document.getElementById('inputText').value = "Dirección Sol";
             } else if (type === 'text') {
-                groupW.style.display = 'none';
-                groupH.style.display = 'none';
-                groupColor.style.display = 'none';
-                document.getElementById('inputText').value = "New Note";
+                groupW.classList.add('hidden');
+                groupH.classList.add('hidden');
+                document.getElementById('inputText').value = "Anotación";
             } else {
-                labelW.innerText = 'Width (cm)';
-                labelH.innerText = 'Height (cm)';
+                labelW.innerText = 'Ancho (cm)';
             }
         }
 
@@ -299,13 +216,11 @@
             const h = parseFloat(document.getElementById('inputH').value);
             const text = document.getElementById('inputText').value;
             const fill = document.getElementById('inputColor').value;
-            const angle = parseFloat(document.getElementById('inputAngle').value);
             
-            let newShape = { type, x: 100, y: 100, label: text, fill, stroke: '#1f2937', angle };
+            let newShape = { type, x: 200, y: 200, label: text, fill, stroke: '#334155', angle: 0 };
             
             if (type === 'rect') { newShape.w = w; newShape.h = h; }
-            else if (type === 'circle' || type === 'semicircle' || type === 'quarter' || type === 'sun') { newShape.r = w; }
-            else if (type === 'line') { newShape.len = w; }
+            else if (type === 'circle' || type === 'quarter' || type === 'sun') { newShape.r = w; }
             
             shapes.push(newShape);
             draw();
@@ -319,15 +234,13 @@
             }
         }
 
-        // --- FILE I/O AND IMAGE EXPORT ---
+        // --- MANEJO DE FICHEROS ---
         function saveLayout() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(shapes));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "balcony_layout.json");
-            document.body.appendChild(downloadAnchor);
+            downloadAnchor.setAttribute("download", "layout_room.json");
             downloadAnchor.click();
-            downloadAnchor.remove();
         }
 
         function loadLayout(input) {
@@ -342,10 +255,7 @@
                         selectedIndex = -1;
                         draw();
                     }
-                } catch (err) {
-                    alert("Error loading file.");
-                }
-                input.value = '';
+                } catch (err) { alert("Error al cargar."); }
             };
             reader.readAsText(file);
         }
@@ -354,191 +264,199 @@
             const tempSelected = selectedIndex;
             selectedIndex = -1;
             draw();
-
             const image = canvas.toDataURL("image/png");
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", image);
-            downloadAnchor.setAttribute("download", "balcony_layout.png");
-            document.body.appendChild(downloadAnchor);
+            downloadAnchor.setAttribute("download", "balcon_layout.png");
             downloadAnchor.click();
-            downloadAnchor.remove();
-
             selectedIndex = tempSelected;
             draw();
         }
 
-        // --- DRAWING ENGINE ---
+        // --- MOTOR DE RENDERIZADO DEL CANVAS ---
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 1. Draw Background
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            // Aplicar el zoom
+            ctx.scale(zoom, zoom);
 
-            // 2. Draw Grid
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.lineWidth = 0.5;
-            for (let x = 0; x < canvas.width; x += GRID_SIZE * SCALE) {
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            // 1. Dibujar Cuadrícula
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width / zoom; x += GRID_SIZE * BASE_SCALE) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height / zoom); ctx.stroke();
             }
-            for (let y = 0; y < canvas.height; y += GRID_SIZE * SCALE) {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            for (let y = 0; y < canvas.height / zoom; y += GRID_SIZE * BASE_SCALE) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width / zoom, y); ctx.stroke();
             }
             
-            // 3. Draw Shapes
+            // 2. Dibujar Elementos
             shapes.forEach((s, index) => {
                 ctx.save();
                 
-                const px = s.x * SCALE;
-                const py = s.y * SCALE;
+                const px = s.x * BASE_SCALE;
+                const py = s.y * BASE_SCALE;
                 
-                // Move canvas origin to shape's center/origin for rotation
                 ctx.translate(px, py);
                 ctx.rotate((s.angle * Math.PI) / 180);
                 
                 ctx.fillStyle = s.fill;
                 ctx.strokeStyle = index === selectedIndex ? '#4f46e5' : s.stroke;
-                ctx.lineWidth = index === selectedIndex ? 3 : 2;
+                ctx.lineWidth = index === selectedIndex ? 3 : 1.5;
                 
                 ctx.beginPath();
                 
+                let ph = 0; // Para calcular la altura del tirador
+                
                 if (s.type === 'rect') {
-                    const pw = s.w * SCALE;
-                    const ph = s.h * SCALE;
-                    // Draw centered around translation point
+                    const pw = s.w * BASE_SCALE;
+                    ph = s.h * BASE_SCALE;
                     if (s.fill !== 'none') ctx.fillRect(-pw/2, -ph/2, pw, ph);
                     ctx.strokeRect(-pw/2, -ph/2, pw, ph);
                     
-                    // Text
-                    ctx.fillStyle = '#1f2937';
+                    ctx.fillStyle = '#1e293b';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText(s.label, 0, 4);
                 } 
                 else if (s.type === 'circle') {
-                    const pr = s.r * SCALE;
+                    const pr = s.r * BASE_SCALE;
+                    ph = pr * 2;
                     ctx.arc(0, 0, pr, 0, Math.PI * 2);
                     if (s.fill !== 'none') ctx.fill();
                     ctx.stroke();
                     
-                    ctx.fillStyle = '#1f2937';
-                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#1e293b';
                     ctx.textAlign = 'center';
                     ctx.fillText(s.label, 0, 4);
                 }
-                else if (s.type === 'semicircle') {
-                    const pr = s.r * SCALE;
-                    ctx.arc(0, 0, pr, 0, Math.PI);
-                    ctx.closePath();
-                    if (s.fill !== 'none') ctx.fill();
-                    ctx.stroke();
-                    
-                    ctx.fillStyle = '#1f2937';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(s.label, 0, pr/2);
-                }
                 else if (s.type === 'quarter') {
-                    const pr = s.r * SCALE;
+                    const pr = s.r * BASE_SCALE;
+                    ph = pr;
                     ctx.moveTo(0, 0);
                     ctx.arc(0, 0, pr, 0, Math.PI / 2);
                     ctx.closePath();
                     if (s.fill !== 'none') ctx.fill();
                     ctx.stroke();
                     
-                    ctx.fillStyle = '#1f2937';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#1e293b';
                     ctx.fillText(s.label, pr/3, pr/3);
                 }
-                else if (s.type === 'line') {
-                    const pLen = s.len * SCALE;
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(pLen, 0);
-                    ctx.stroke();
-                    
-                    ctx.fillStyle = '#1f2937';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(s.label, 10, -5);
-                }
                 else if (s.type === 'sun') {
-                    const pr = s.r * SCALE;
-                    // Draw Sun
+                    const pr = s.r * BASE_SCALE;
+                    ph = pr * 2;
                     ctx.arc(0, 0, pr, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
-                    // Draw Sun Rays
+                    ctx.fill(); ctx.stroke();
+                    // Rayos
                     for (let i = 0; i < 8; i++) {
                         ctx.rotate(Math.PI / 4);
-                        ctx.moveTo(0, pr + 2);
-                        ctx.lineTo(0, pr + 10);
+                        ctx.moveTo(0, pr + 2); ctx.lineTo(0, pr + 8);
                     }
                     ctx.stroke();
-                    // Draw Direction Arrow
+                    // Flecha
                     ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(0, pr + 30);
-                    ctx.lineTo(-5, pr + 20);
-                    ctx.moveTo(0, pr + 30);
-                    ctx.lineTo(5, pr + 20);
+                    ctx.moveTo(0, 0); ctx.lineTo(0, pr + 20);
+                    ctx.lineTo(-5, pr + 12); ctx.moveTo(0, pr + 20); ctx.lineTo(5, pr + 12);
                     ctx.stroke();
                     
-                    ctx.fillStyle = '#1f2937';
-                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#1e293b';
                     ctx.textAlign = 'center';
-                    ctx.fillText(s.label, 0, pr + 45);
+                    ctx.fillText(s.label, 0, pr + 32);
                 }
                 else if (s.type === 'text') {
-                    ctx.fillStyle = '#1f2937';
+                    ctx.fillStyle = '#0f172a';
                     ctx.font = 'bold 14px Arial';
                     ctx.textAlign = 'center';
-                    ctx.fillText(s.label, 0, 0);
+                    ctx.fillText(s.label, 0, 5);
+                    ph = 30; // Altura estimada para el tirador
+                }
+
+                // Dibujar el tirador de rotación si el elemento está seleccionado
+                if (index === selectedIndex) {
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 1.5;
+                    ctx.fillStyle = '#ffffff';
+
+                    // Distancia hacia arriba
+                    let handleOffset = -ph/2 - 25;
+                    if(s.type === 'quarter' || s.type === 'text') handleOffset = -35;
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, -ph/2);
+                    ctx.lineTo(0, handleOffset);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(0, handleOffset, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
                     
-                    // Light bounding box for interaction when selected
-                    if (index === selectedIndex) {
-                        const metrics = ctx.measureText(s.label);
-                        ctx.strokeStyle = '#4f46e5';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(-metrics.width/2 - 5, -15, metrics.width + 10, 20);
-                    }
+                    // Flecha circular indicando rotación en el tirador
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.font = '10px FontAwesome';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('\uf01e', 0, handleOffset + 3);
                 }
                 
                 ctx.restore();
             });
+            ctx.restore();
         }
 
-        // --- MOUSE & TOUCH INTERACTION ---
+        // --- SISTEMA DE INTERACCIÓN: MOVER Y ROTAR ---
         function getPointerPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            // Revertimos escala de zoom y escala base para tener las coordenadas originales en "cm"
             return {
-                x: (clientX - rect.left) / SCALE,
-                y: (clientY - rect.top) / SCALE
+                x: (clientX - rect.left) / zoom / BASE_SCALE,
+                y: (clientY - rect.top) / zoom / BASE_SCALE
             };
         }
 
         function handleStart(e) {
             const pos = getPointerPos(e);
-            selectedIndex = -1;
             
+            // Si hay un objeto seleccionado, primero comprobamos si hemos pulsado el tirador de rotación
+            if (selectedIndex >= 0) {
+                const s = shapes[selectedIndex];
+                const dx = pos.x - s.x;
+                const dy = pos.y - s.y;
+                const rad = -s.angle * Math.PI / 180;
+                
+                // Convertir la posición de click a coordenadas locales del objeto para el tirador
+                const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+                const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+                
+                let ph = (s.type === 'rect') ? s.h : (s.type === 'circle' || s.type === 'sun') ? s.r * 2 : 50;
+                let handleOffset = -ph/2 - 25/BASE_SCALE;
+                if (s.type === 'quarter' || s.type === 'text') handleOffset = -35 / BASE_SCALE;
+
+                const distToHandle = Math.sqrt(localX**2 + (localY - handleOffset)**2);
+                
+                if (distToHandle <= 15 / BASE_SCALE) {
+                    isRotating = true;
+                    return;
+                }
+            }
+
+            // Si no fue el tirador, buscamos si pulsamos una forma para moverla
+            selectedIndex = -1;
             for (let i = shapes.length - 1; i >= 0; i--) {
                 const s = shapes[i];
-                // Simple radius-based boundary check for grab-points
                 const dist = Math.sqrt((pos.x - s.x)**2 + (pos.y - s.y)**2);
                 
                 if (s.type === 'rect') {
-                    // Approximate check ignoring rotation for simplicity of picking
                     if (pos.x >= s.x - s.w/2 && pos.x <= s.x + s.w/2 && pos.y >= s.y - s.h/2 && pos.y <= s.y + s.h/2) {
                         selectedIndex = i; break;
                     }
-                } else if (s.type === 'circle' || s.type === 'quarter' || s.type === 'semicircle' || s.type === 'sun') {
+                } else if (s.type === 'circle' || s.type === 'quarter' || s.type === 'sun') {
                     if (dist <= s.r) { selectedIndex = i; break; }
-                } else if (s.type === 'line') {
-                    if (dist <= 15) { selectedIndex = i; break; } 
                 } else if (s.type === 'text') {
-                    if (dist <= 20) { selectedIndex = i; break; }
+                    if (dist <= 25) { selectedIndex = i; break; }
                 }
             }
             
@@ -547,37 +465,38 @@
                 dragOffset.x = pos.x - shapes[selectedIndex].x;
                 dragOffset.y = pos.y - shapes[selectedIndex].y;
                 
-                // Load its current settings into controls
+                // Actualizar sidebar con los datos del objeto
                 const s = shapes[selectedIndex];
                 document.getElementById('shapeType').value = s.type;
                 toggleInputs();
                 document.getElementById('inputText').value = s.label;
-                document.getElementById('inputAngle').value = s.angle;
-                updateAngleLabel(s.angle);
-                if (s.fill) document.getElementById('inputColor').value = s.fill;
-                if (s.w) document.getElementById('inputW').value = s.w;
-                if (s.h) document.getElementById('inputH').value = s.h;
-                if (s.r) document.getElementById('inputW').value = s.r;
-                if (s.len) document.getElementById('inputW').value = s.len;
             }
             draw();
         }
 
         function handleMove(e) {
-            if (!isDragging || selectedIndex === -1) return;
+            if (!isDragging && !isRotating) return;
             e.preventDefault(); 
             const pos = getPointerPos(e);
+            const s = shapes[selectedIndex];
             
-            let newX = Math.round((pos.x - dragOffset.x) / GRID_SIZE) * GRID_SIZE;
-            let newY = Math.round((pos.y - dragOffset.y) / GRID_SIZE) * GRID_SIZE;
-            
-            shapes[selectedIndex].x = newX;
-            shapes[selectedIndex].y = newY;
+            if (isDragging) {
+                // Movimiento con rejilla imantada de 10cm
+                s.x = Math.round((pos.x - dragOffset.x) / GRID_SIZE) * GRID_SIZE;
+                s.y = Math.round((pos.y - dragOffset.y) / GRID_SIZE) * GRID_SIZE;
+            } else if (isRotating) {
+                // Cálculo del ángulo según la posición del ratón
+                const dx = pos.x - s.x;
+                const dy = pos.y - s.y;
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                s.angle = angle + 90; // +90 porque el tirador nace en el eje negativo (arriba)
+            }
             draw();
         }
 
-        function handleEnd() { isDragging = false; }
+        function handleEnd() { isDragging = false; isRotating = false; }
 
+        // Listeners tanto para PC como táctiles
         canvas.addEventListener('mousedown', handleStart);
         canvas.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
@@ -586,20 +505,9 @@
         canvas.addEventListener('touchmove', handleMove);
         window.addEventListener('touchend', handleEnd);
 
-        // Slider listener to actively rotate selected object
-        document.getElementById('inputAngle').addEventListener('input', function(e) {
-            if (selectedIndex >= 0) {
-                shapes[selectedIndex].angle = parseFloat(e.target.value);
-                draw();
-            }
-        });
-
-        // Text listener to actively change text of selected object
+        // Inputs en tiempo real
         document.getElementById('inputText').addEventListener('input', function(e) {
-            if (selectedIndex >= 0) {
-                shapes[selectedIndex].label = e.target.value;
-                draw();
-            }
+            if (selectedIndex >= 0) { shapes[selectedIndex].label = e.target.value; draw(); }
         });
 
         toggleInputs();
