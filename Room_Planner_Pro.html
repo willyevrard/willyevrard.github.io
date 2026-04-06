@@ -15,81 +15,77 @@
             background-size: 20px 20px;
         }
         #properties-panel { display: none; transition: opacity 0.2s; }
-        kbd { border: 1px solid #d1d5db; border-radius: 4px; padding: 1px 4px; background: white; font-size: 10px; }
+        .tool-btn { @apply flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center; }
     </style>
-    <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', 'primary-hover': '#4338ca' } } } }
-    </script>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans">
+<body class="bg-gray-50 text-gray-800 font-sans">
 
-    <header class="bg-white shadow-sm border-b border-gray-200 z-10">
-        <div class="max-w-full mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <a href="index.html" class="text-gray-500 hover:text-primary transition"><i class="fas fa-arrow-left"></i></a>
-                <h1 class="text-xl font-bold text-gray-900">Room Planner <span class="font-light text-gray-500">Pro</span></h1>
-            </div>
-            
-            <div class="flex items-center gap-2">
-                <button onclick="saveDesign()" class="bg-white hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-md border border-gray-300 text-sm flex items-center gap-2">
-                    <i class="fas fa-save text-blue-600"></i> Guardar
-                </button>
-                <button onclick="document.getElementById('fileInput').click()" class="bg-white hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-md border border-gray-300 text-sm flex items-center gap-2">
-                    <i class="fas fa-folder-open text-yellow-600"></i> Cargar
-                </button>
-                <input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadDesign(event)">
-                <div class="h-6 w-px bg-gray-200 mx-1"></div>
-                <button onclick="exportAsPNG()" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 shadow-sm">
-                    <i class="fas fa-file-image"></i> Exportar PNG
-                </button>
-            </div>
+    <header class="bg-white shadow-sm border-b border-gray-200 z-10 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="text-gray-400 hover:text-indigo-600"><i class="fas fa-arrow-left"></i></a>
+            <h1 class="text-xl font-bold italic text-indigo-900">Room Planner <span class="font-light">Pro</span></h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="saveDesign()" class="bg-white border px-3 py-2 rounded text-sm hover:bg-gray-50"><i class="fas fa-save text-blue-500 mr-2"></i>Guardar</button>
+            <button onclick="document.getElementById('fileInput').click()" class="bg-white border px-3 py-2 rounded text-sm hover:bg-gray-50"><i class="fas fa-folder-open text-yellow-500 mr-2"></i>Cargar</button>
+            <input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadDesign(event)">
+            <button onclick="exportAsPNG()" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 shadow-md"><i class="fas fa-camera mr-2"></i>Exportar PNG</button>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-10 shadow-lg">
-            <div class="flex-1 overflow-y-auto p-4 space-y-6">
-                
-                <div>
-                    <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Estructura y Sol</h3>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="addWallLine()" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">
-                            <i class="fas fa-grip-lines text-lg"></i> Pared
-                        </button>
-                        <button onclick="addSunOrientation()" class="p-2 border rounded-lg hover:bg-yellow-50 text-xs font-medium flex flex-col items-center gap-1">
-                            <i class="fas fa-sun text-lg text-yellow-500"></i> Sol
-                        </button>
-                        <button onclick="addShape('roomfloor')" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">
-                            <i class="fas fa-vector-square text-lg"></i> Suelo
-                        </button>
-                        <button onclick="addRuler()" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">
-                            <i class="fas fa-ruler-horizontal text-lg"></i> Regla
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Mobiliario</h3>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="addShape('table')" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">Mesa Rect.</button>
-                        <button onclick="addShape('round_table')" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">Mesa Circular</button>
-                        <button onclick="addShape('sofa')" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">Sofá</button>
-                        <button onclick="addShape('bed')" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">Cama</button>
-                        <button onclick="addShape('chair')" class="p-2 border rounded-lg hover:bg-indigo-50 text-xs font-medium flex flex-col items-center gap-1">Silla / BBQ</button>
-                    </div>
-                </div>
-
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <p class="text-[10px] text-blue-800 leading-tight">
-                        <i class="fas fa-info-circle mr-1"></i> <b>Tip:</b> Haz doble click en cualquier bloque para editar su texto.
-                    </p>
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto p-4 space-y-6">
+            
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Estructura y Sol</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="addWallLine()" class="tool-btn">
+                        <i class="fas fa-grip-lines text-2xl mb-1 text-gray-700"></i>
+                        <span class="text-[10px] font-bold">PARED</span>
+                    </button>
+                    <button onclick="addSun()" class="tool-btn">
+                        <i class="fas fa-sun text-2xl mb-1 text-yellow-500"></i>
+                        <span class="text-[10px] font-bold">SOL/NORTE</span>
+                    </button>
+                    <button onclick="addShape('roomfloor')" class="tool-btn">
+                        <i class="fas fa-vector-square text-2xl mb-1 text-gray-400"></i>
+                        <span class="text-[10px] font-bold">SUELO</span>
+                    </button>
+                    <button onclick="addRuler()" class="tool-btn">
+                        <i class="fas fa-ruler-horizontal text-2xl mb-1 text-indigo-400"></i>
+                        <span class="text-[10px] font-bold">REGLA</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="p-4 border-t text-[10px] text-gray-400 space-y-1">
-                <p><kbd>Click Fondo</kbd> + Arrastrar: Mover plano</p>
-                <p><kbd>Alt</kbd> + Click Objeto: Forzar mover plano</p>
-                <p><kbd>Supr</kbd>: Borrar objeto</p>
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Mobiliario</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="addShape('table')" class="tool-btn">
+                        <i class="fas fa-table text-2xl mb-1 text-amber-700"></i>
+                        <span class="text-[10px] font-bold">MESA</span>
+                    </button>
+                    <button onclick="addShape('round_table')" class="tool-btn">
+                        <i class="fas fa-circle text-2xl mb-1 text-orange-400"></i>
+                        <span class="text-[10px] font-bold">M. REDONDA</span>
+                    </button>
+                    <button onclick="addShape('sofa')" class="tool-btn">
+                        <i class="fas fa-couch text-2xl mb-1 text-pink-500"></i>
+                        <span class="text-[10px] font-bold">SOFÁ</span>
+                    </button>
+                    <button onclick="addShape('bed')" class="tool-btn">
+                        <i class="fas fa-bed text-2xl mb-1 text-purple-600"></i>
+                        <span class="text-[10px] font-bold">CAMA</span>
+                    </button>
+                    <button onclick="addShape('chair')" class="tool-btn">
+                        <i class="fas fa-chair text-2xl mb-1 text-emerald-600"></i>
+                        <span class="text-[10px] font-bold">SILLA/BBQ</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-3 bg-indigo-50 rounded-lg text-[11px] text-indigo-700">
+                <b>Truco:</b> Doble click para editar el texto del mueble. <kbd class="bg-white border px-1">Alt</kbd> + Arrastrar para moverte por el plano.
             </div>
         </aside>
 
@@ -97,40 +93,26 @@
             <canvas id="c"></canvas>
 
             <div id="properties-panel" class="absolute top-4 right-4 bg-white p-4 rounded-xl shadow-2xl border border-gray-200 z-20 w-64 opacity-0 pointer-events-none">
-                <div class="flex items-center justify-between mb-4 border-b pb-2">
-                    <h3 class="font-bold text-gray-800">Editar Bloque</h3>
-                    <button onclick="deselectAll()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
-                </div>
-                
+                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 italic">Ajustes de Bloque</h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Color</label>
-                        <div class="flex gap-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Color</label>
+                        <div class="flex gap-2 mt-1">
                             <input type="color" id="obj-color" oninput="updateObjectColor(this.value)" class="w-8 h-8 rounded border-0 cursor-pointer">
                             <input type="text" id="obj-color-text" class="flex-1 text-xs border-gray-300 rounded font-mono" readonly>
                         </div>
                     </div>
-
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Texto Etiqueta</label>
-                        <input type="text" id="obj-text-input" oninput="updateObjectText(this.value)" placeholder="Escribe aquí..." class="w-full text-sm border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Nombre/Texto</label>
+                        <input type="text" id="obj-text-input" oninput="updateObjectText(this.value)" class="w-full text-sm border-gray-300 rounded mt-1">
                     </div>
-
-                    <div class="grid grid-cols-2 gap-2 pt-2">
-                        <button id="btn-lock" onclick="toggleLockSelected()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs flex items-center justify-center gap-1 font-bold">
+                    <div class="flex gap-2 pt-2">
+                        <button id="btn-lock" onclick="toggleLockSelected()" class="flex-1 bg-gray-100 py-2 rounded text-xs font-bold flex items-center justify-center gap-1">
                             <i class="fas fa-lock" id="lock-icon"></i> <span id="lock-text">Fijar</span>
                         </button>
-                        <button onclick="deleteSelected()" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg text-xs flex items-center justify-center gap-1 font-bold">
-                            <i class="fas fa-trash"></i> Borrar
-                        </button>
+                        <button onclick="deleteSelected()" class="bg-red-50 text-red-600 px-3 py-2 rounded hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-1.5 rounded-full shadow border border-gray-200 flex gap-4 text-xs font-bold text-gray-500 z-10">
-                <button onclick="zoomOut()"><i class="fas fa-minus"></i></button>
-                <span id="zoom-level">100%</span>
-                <button onclick="zoomIn()"><i class="fas fa-plus"></i></button>
             </div>
         </main>
     </div>
@@ -138,247 +120,202 @@
     <script>
         const wrapper = document.getElementById('canvas-container');
         const canvas = new fabric.Canvas('c', {
-            width: wrapper.clientWidth,
-            height: wrapper.clientHeight,
-            selection: true,
-            preserveObjectStacking: true
+            width: wrapper.clientWidth, height: wrapper.clientHeight,
+            selection: true, preserveObjectStacking: true
         });
 
-        let currentZoom = 1.0;
-        const GRID = 20;
+        const GRID = 20; // 1px = 1cm (aproximado para escala)
 
-        // Estilo de controles
-        fabric.Object.prototype.set({
-            transparentCorners: false, cornerColor: '#4f46e5', cornerStrokeColor: '#4f46e5',
-            borderColor: '#4f46e5', cornerSize: 8, cornerStyle: 'circle'
+        // --- SISTEMA DE MEDIDAS (FUNDAMENTAL) ---
+        canvas.on('after:render', function() {
+            const activeObj = canvas.getActiveObject();
+            if (!activeObj || activeObj.locked || activeObj.customType === 'regla') return;
+
+            const ctx = canvas.contextContainer;
+            const vpt = canvas.viewportTransform;
+            ctx.save();
+            ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+
+            ctx.font = 'bold 12px Arial';
+            ctx.fillStyle = '#4f46e5';
+            ctx.textAlign = 'center';
+
+            // Calcular ancho y alto según escala actual del objeto
+            const w = Math.round(activeObj.getScaledWidth());
+            const h = Math.round(activeObj.getScaledHeight());
+            
+            // Dibujar etiqueta de ancho (Arriba)
+            ctx.fillText(`${w} cm`, activeObj.left, activeObj.top - (activeObj.getScaledHeight()/2) - 10);
+            
+            // Dibujar etiqueta de alto (Derecha)
+            ctx.save();
+            ctx.translate(activeObj.left + (activeObj.getScaledWidth()/2) + 20, activeObj.top);
+            ctx.rotate(Math.PI / 2);
+            ctx.fillText(`${h} cm`, 0, 0);
+            ctx.restore();
+
+            ctx.restore();
         });
 
         // --- CREACIÓN DE OBJETOS ---
-
-        function addShape(type) {
-            const center = getCanvasCenter();
-            let shape;
-            const common = { left: center.x, top: center.y, originX: 'center', originY: 'center', fill: '#ffffff', stroke: '#4f46e5', strokeWidth: 2 };
-
-            switch(type) {
-                case 'table': shape = new fabric.Rect({ ...common, width: 120, height: 80, label: 'Mesa' }); break;
-                case 'round_table': shape = new fabric.Circle({ ...common, radius: 50, label: 'Mesa Circular' }); break;
-                case 'chair': shape = new fabric.Circle({ ...common, radius: 20, fill: '#10b981', label: 'Silla/BBQ' }); break;
-                case 'sofa': shape = new fabric.Rect({ ...common, width: 180, height: 70, rx: 10, ry: 10, fill: '#ec4899', label: 'Sofá' }); break;
-                case 'bed': shape = new fabric.Rect({ ...common, width: 140, height: 190, rx: 5, ry: 5, fill: '#8b5cf6', label: 'Cama' }); break;
-                case 'roomfloor': shape = new fabric.Rect({ ...common, width: 400, height: 300, fill: '#f8fafc', stroke: '#cbd5e1', label: 'Habitación' }); canvas.sendToBack(shape); break;
-            }
-            createGroupWithText(shape);
-        }
-
-        function createGroupWithText(shape) {
-            const text = new fabric.IText(shape.label || 'Objeto', {
-                fontSize: 14, originX: 'center', originY: 'center',
-                left: shape.left, top: shape.top, fontFamily: 'Arial', fontWeight: 'bold'
-            });
-            const group = new fabric.Group([shape, text], {
-                left: shape.left, top: shape.top, originX: 'center', originY: 'center',
-                label: shape.label, customType: 'mueble'
-            });
-            addToCanvas(group);
-        }
-
-        function addWallLine() {
-            const center = getCanvasCenter();
-            const wall = new fabric.Rect({
-                left: center.x, top: center.y, width: 200, height: 10, fill: '#1f2937', 
-                originX: 'center', originY: 'center', label: 'Pared'
-            });
-            addToCanvas(wall);
-        }
-
-        function addRuler() {
-            const center = getCanvasCenter();
-            const body = new fabric.Rect({ width: 300, height: 20, fill: '#fef08a', stroke: '#ca8a04' });
-            const label = new fabric.IText('300cm', { fontSize: 12, top: 4, left: 10, fontWeight: 'bold' });
-            const ruler = new fabric.Group([body, label], {
-                left: center.x, top: center.y, label: 'Regla', customType: 'regla'
-            });
-            // Permitir escalar solo el ancho para ajustar tamaño
-            ruler.setControlsVisibility({ mt: false, mb: false, ml: true, mr: true });
-            addToCanvas(ruler);
-        }
-
-        function addSunOrientation() {
-            const center = getCanvasCenter();
-            const circle = new fabric.Circle({ radius: 30, fill: '#fef3c7', stroke: '#fbbf24', strokeWidth: 2 });
-            const ray = new fabric.Line([30, -10, 30, -40], { stroke: '#fbbf24', strokeWidth: 4 });
-            const text = new fabric.IText('SOL / NORTE', { fontSize: 10, top: 10, left: 0, originX: 'center', fontWeight: 'bold' });
-            const sun = new fabric.Group([circle, ray, text], {
-                left: center.x, top: center.y, label: 'Sol', originX: 'center', originY: 'center'
-            });
-            addToCanvas(sun);
-        }
-
-        // --- LÓGICA DE TEXTO Y PROPIEDADES ---
-
-        canvas.on('mouse:dblclick', function(options) {
-            if (options.target && options.target.type === 'group') {
-                const textObj = options.target.item(1);
-                if (textObj && textObj instanceof fabric.IText) {
-                    textObj.enterEditing();
-                    canvas.setActiveObject(textObj);
-                }
-            }
-        });
-
-        function updateObjectText(val) {
-            const obj = canvas.getActiveObject();
-            if (!obj) return;
-            // Si es grupo, el texto suele ser el item 1
-            const target = obj.type === 'group' ? obj.item(1) : obj;
-            if (target && target.setText) {
-                target.set('text', val);
-                canvas.renderAll();
-            }
-        }
-
-        function updateObjectColor(color) {
-            const obj = canvas.getActiveObject();
-            if (!obj) return;
-            const target = obj.type === 'group' ? obj.item(0) : obj;
-            target.set(obj.type === 'line' ? 'stroke' : 'fill', color);
-            document.getElementById('obj-color-text').value = color.toUpperCase();
-            canvas.renderAll();
-        }
-
-        // --- SNAP Y PAN ---
-
-        canvas.on('object:moving', (e) => {
-            e.target.set({
-                left: Math.round(e.target.left / GRID) * GRID,
-                top: Math.round(e.target.top / GRID) * GRID
-            });
-        });
-
-        let isPanning = false;
-        canvas.on('mouse:down', function(opt) {
-            if (!opt.target || opt.e.altKey || (opt.target && opt.target.locked)) {
-                isPanning = true;
-                this.selection = false;
-                this.lastPosX = opt.e.clientX;
-                this.lastPosY = opt.e.clientY;
-            }
-        });
-        canvas.on('mouse:move', function(opt) {
-            if (isPanning) {
-                const vpt = this.viewportTransform;
-                vpt[4] += opt.e.clientX - this.lastPosX;
-                vpt[5] += opt.e.clientY - this.lastPosY;
-                this.requestRenderAll();
-                this.lastPosX = opt.e.clientX;
-                this.lastPosY = opt.e.clientY;
-            }
-        });
-        canvas.on('mouse:up', function() { isPanning = false; this.selection = true; });
-
-        // --- SISTEMA DE SELECCIÓN ---
-
-        canvas.on('selection:created', updatePanel);
-        canvas.on('selection:updated', updatePanel);
-        canvas.on('selection:cleared', () => { 
-            const p = document.getElementById('properties-panel');
-            p.style.opacity = '0'; p.style.pointerEvents = 'none';
-        });
-
-        function updatePanel() {
-            const obj = canvas.getActiveObject();
-            const p = document.getElementById('properties-panel');
-            p.style.display = 'block';
-            setTimeout(() => { p.style.opacity = '1'; p.style.pointerEvents = 'auto'; }, 10);
-            
-            const colorInput = document.getElementById('obj-color');
-            const textInput = document.getElementById('obj-text-input');
-            
-            const mainShape = obj.type === 'group' ? obj.item(0) : obj;
-            const mainText = obj.type === 'group' ? obj.item(1) : null;
-
-            colorInput.value = mainShape.fill || '#000000';
-            document.getElementById('obj-color-text').value = String(colorInput.value).toUpperCase();
-            textInput.value = mainText ? mainText.text : (obj.text || "");
-            
-            const isLocked = obj.locked;
-            document.getElementById('lock-text').innerText = isLocked ? "Desbloquear" : "Fijar";
-            document.getElementById('btn-lock').className = isLocked ? "bg-red-600 text-white p-2 rounded-lg text-xs font-bold w-full" : "bg-gray-100 text-gray-700 p-2 rounded-lg text-xs font-bold w-full";
-        }
-
-        function toggleLockSelected() {
-            const obj = canvas.getActiveObject();
-            if (!obj) return;
-            const newState = !obj.locked;
-            obj.locked = newState;
-            const props = ['lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls'];
-            props.forEach(p => obj[p] = newState);
-            obj.set('stroke', newState ? '#ef4444' : (obj.item ? obj.item(0).stroke : '#4f46e5'));
-            obj.set('strokeDashArray', newState ? [5, 5] : null);
-            canvas.discardActiveObject();
-            canvas.renderAll();
-        }
-
-        // --- UTILIDADES ---
-
         function getCanvasCenter() {
             const vpt = canvas.viewportTransform;
-            return { x: (canvas.getWidth()/2 - vpt[4])/currentZoom, y: (canvas.getHeight()/2 - vpt[5])/currentZoom };
+            return { x: (canvas.getWidth()/2 - vpt[4])/canvas.getZoom(), y: (canvas.getHeight()/2 - vpt[5])/canvas.getZoom() };
         }
 
         function addToCanvas(obj) {
             obj.toObject = (function(toObject) {
-                return function(propertiesToInclude) {
-                    return fabric.util.object.extend(toObject.call(this, propertiesToInclude), {
-                        label: this.label, locked: this.locked, customType: this.customType
-                    });
-                };
+                return function(props) { return fabric.util.object.extend(toObject.call(this, props), { label: this.label, locked: this.locked, customType: this.customType }); };
             })(obj.toObject);
             canvas.add(obj);
             canvas.setActiveObject(obj);
+            canvas.renderAll();
         }
 
-        function deleteSelected() {
-            canvas.getActiveObjects().forEach(obj => { if(!obj.locked) canvas.remove(obj); });
+        function createMueble(shape, label) {
+            const text = new fabric.IText(label, { fontSize: 14, originX: 'center', originY: 'center', fontFamily: 'Arial' });
+            const group = new fabric.Group([shape, text], {
+                left: shape.left, top: shape.top, originX: 'center', originY: 'center', customType: 'mueble'
+            });
+            addToCanvas(group);
+        }
+
+        function addShape(type) {
+            const c = getCanvasCenter();
+            let s;
+            const base = { left: c.x, top: c.y, originX: 'center', originY: 'center', fill: '#fff', stroke: '#444', strokeWidth: 2 };
+            
+            if(type === 'table') createMueble(new fabric.Rect({...base, width: 140, height: 80}), 'MESA');
+            if(type === 'round_table') createMueble(new fabric.Circle({...base, radius: 50}), 'MESA R.');
+            if(type === 'sofa') createMueble(new fabric.Rect({...base, width: 180, height: 75, rx: 10, ry: 10, fill: '#fbcfe8'}), 'SOFÁ');
+            if(type === 'bed') createMueble(new fabric.Rect({...base, width: 150, height: 200, fill: '#ddd6fe'}), 'CAMA');
+            if(type === 'chair') createMueble(new fabric.Circle({...base, radius: 25, fill: '#d1fae5'}), 'SILLA');
+            if(type === 'roomfloor') addToCanvas(new fabric.Rect({...base, width: 400, height: 300, fill: '#f8fafc', stroke: '#cbd5e1', label: 'Habitación'}));
+        }
+
+        function addWallLine() {
+            const c = getCanvasCenter();
+            addToCanvas(new fabric.Rect({ left: c.x, top: c.y, width: 200, height: 10, fill: '#1f2937', originX: 'center', originY: 'center' }));
+        }
+
+        function addSun() {
+            const c = getCanvasCenter();
+            const sunBody = new fabric.Circle({ radius: 25, fill: '#fef3c7', stroke: '#fbbf24', strokeWidth: 2 });
+            const arrow = new fabric.Triangle({ width: 15, height: 15, fill: '#fbbf24', top: -40, left: 0, originX: 'center' });
+            const label = new fabric.IText('NORTE / SOL', { fontSize: 10, top: 10, originX: 'center', fontWeight: 'bold' });
+            addToCanvas(new fabric.Group([sunBody, arrow, label], { left: c.x, top: c.y, originX: 'center', originY: 'center' }));
+        }
+
+        function addRuler() {
+            const c = getCanvasCenter();
+            const rect = new fabric.Rect({ width: 300, height: 20, fill: '#fef08a', stroke: '#ca8a04' });
+            const text = new fabric.IText('300cm', { fontSize: 12, left: 10, top: 4, fontWeight: 'bold' });
+            const ruler = new fabric.Group([rect, text], { left: c.x, top: c.y, customType: 'regla' });
+            ruler.setControlsVisibility({ mt: false, mb: false });
+            addToCanvas(ruler);
+        }
+
+        // --- LÓGICA DE INTERACCIÓN ---
+        canvas.on('object:moving', (e) => {
+            e.target.set({ left: Math.round(e.target.left / GRID) * GRID, top: Math.round(e.target.top / GRID) * GRID });
+        });
+
+        canvas.on('selection:created', updatePanel);
+        canvas.on('selection:updated', updatePanel);
+        canvas.on('selection:cleared', () => { propertiesPanel.style.opacity = '0'; propertiesPanel.style.pointerEvents = 'none'; });
+
+        function updatePanel() {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            propertiesPanel.style.display = 'block';
+            setTimeout(() => { propertiesPanel.style.opacity = '1'; propertiesPanel.style.pointerEvents = 'auto'; }, 10);
+            
+            const shape = obj.item ? obj.item(0) : obj;
+            const text = obj.item ? obj.item(1) : null;
+            
+            document.getElementById('obj-color').value = shape.fill || '#000000';
+            document.getElementById('obj-color-text').value = String(shape.fill).toUpperCase();
+            document.getElementById('obj-text-input').value = text ? text.text : (obj.text || "");
+            
+            const isLocked = obj.locked;
+            document.getElementById('lock-text').innerText = isLocked ? "Desbloquear" : "Fijar";
+            document.getElementById('btn-lock').className = isLocked ? "flex-1 bg-red-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1" : "flex-1 bg-gray-100 py-2 rounded text-xs font-bold flex items-center justify-center gap-1";
+        }
+
+        function updateObjectColor(c) {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            (obj.item ? obj.item(0) : obj).set('fill', c);
+            document.getElementById('obj-color-text').value = c.toUpperCase();
+            canvas.renderAll();
+        }
+
+        function updateObjectText(v) {
+            const obj = canvas.getActiveObject();
+            if(obj && obj.item && obj.item(1)) { obj.item(1).set('text', v); canvas.renderAll(); }
+        }
+
+        function toggleLockSelected() {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            const newState = !obj.locked;
+            obj.locked = newState;
+            const p = ['lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls'];
+            p.forEach(prop => obj[prop] = newState);
+            obj.set('stroke', newState ? '#ef4444' : '#444');
+            obj.set('strokeDashArray', newState ? [5, 5] : null);
             canvas.discardActiveObject().renderAll();
         }
 
-        function zoomIn() { currentZoom *= 1.1; canvas.setZoom(currentZoom); updateZoomLevel(); }
-        function zoomOut() { currentZoom /= 1.1; canvas.setZoom(currentZoom); updateZoomLevel(); }
-        function updateZoomLevel() { document.getElementById('zoom-level').innerText = Math.round(currentZoom * 100) + '%'; }
-        function deselectAll() { canvas.discardActiveObject().renderAll(); }
+        // --- NAVEGACIÓN (PAN & ZOOM) ---
+        let isPanning = false;
+        canvas.on('mouse:down', function(opt) {
+            if(!opt.target || opt.e.altKey || opt.target.locked) {
+                isPanning = true; this.selection = false;
+                this.lastPosX = opt.e.clientX; this.lastPosY = opt.e.clientY;
+            }
+        });
+        canvas.on('mouse:move', function(opt) {
+            if(isPanning) {
+                const vpt = this.viewportTransform;
+                vpt[4] += opt.e.clientX - this.lastPosX; vpt[5] += opt.e.clientY - this.lastPosY;
+                canvas.requestRenderAll();
+                this.lastPosX = opt.e.clientX; this.lastPosY = opt.e.clientY;
+            }
+        });
+        canvas.on('mouse:up', function() { isPanning = false; this.selection = true; });
 
+        canvas.on('mouse:wheel', function(opt) {
+            let zoom = canvas.getZoom() * (0.999 ** opt.e.deltaY);
+            zoom = Math.min(Math.max(zoom, 0.2), 4);
+            canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+            opt.e.preventDefault(); opt.e.stopPropagation();
+        });
+
+        // --- ARCHIVOS ---
         function saveDesign() {
             const json = JSON.stringify(canvas.toJSON(['label', 'locked', 'customType', 'lockMovementX', 'lockMovementY', 'hasControls']));
             const blob = new Blob([json], { type: "application/json" });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'mi_plano.json';
-            a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plano.json'; a.click();
         }
-
         function loadDesign(e) {
             const reader = new FileReader();
             reader.onload = (f) => canvas.loadFromJSON(f.target.result, () => canvas.renderAll());
             reader.readAsText(e.target.files[0]);
         }
-
         function exportAsPNG() {
-            deselectAll();
+            canvas.discardActiveObject();
             setTimeout(() => {
-                const dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
-                const link = document.createElement('a');
-                link.download = 'plano_willy.png';
-                link.href = dataURL;
+                const link = document.createElement('a'); link.download = 'plano.png';
+                link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
                 link.click();
             }, 100);
         }
-
-        window.addEventListener('keydown', (e) => {
-            if (document.activeElement.tagName === 'INPUT') return;
-            if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
-        });
+        function deleteSelected() {
+            canvas.getActiveObjects().forEach(o => { if(!o.locked) canvas.remove(o); });
+            canvas.discardActiveObject().renderAll();
+        }
+        window.addEventListener('keydown', (e) => { if(e.key === 'Delete') deleteSelected(); });
     </script>
 </body>
 </html>
