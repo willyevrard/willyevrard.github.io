@@ -2,285 +2,469 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Room Planner Pro - Desktop Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Planner Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        body { font-family: ui-sans-serif, system-ui, sans-serif; background-color: #f1f5f9; }
-        .canvas-area::-webkit-scrollbar { display: none; }
-        canvas {
-            background-image: linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
-            background-size: 20px 20px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            cursor: grab;
-            background-color: white;
+        :root {
+            --primary: #4f46e5; /* Indigo-600 to match your index.html */
+            --primary-hover: #4338ca;
+            --sidebar-bg: #f9fafb;
+            --canvas-bg: #ffffff;
+            --border: #e5e7eb;
+            --text-main: #1f2937;
         }
-        canvas:active { cursor: grabbing; }
-        input:focus { border-color: #4f46e5 !important; ring: 2px #4f46e5; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--sidebar-bg);
+            color: var(--text-main);
+        }
+        #sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        .sidebar-header {
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+        .sidebar-header h2 { margin: 0; font-size: 20px; font-weight: 600; }
+        .sidebar-content {
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .shape-btn {
+            padding: 12px;
+            background: white;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            text-align: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-weight: 500;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .shape-btn:hover { background: #f3f4f6; border-color: #d1d5db; transform: translateY(-1px); }
+        .section-title { font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 700; margin-top: 15px; letter-spacing: 0.05em; }
+        
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        #toolbar {
+            height: 60px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+        .btn {
+            padding: 8px 16px;
+            background: white;
+            color: #374151;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: #f3f4f6; }
+        .btn-primary { background: var(--primary); color: white; border: none; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { color: #dc2626; border-color: #fca5a5; }
+        .btn-danger:hover { background: #fef2f2; }
+        .btn.active { background: #e0e7ff; border-color: #c7d2fe; color: var(--primary); }
+        
+        #canvas-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: #f9fafb;
+            /* Blueprint grid pattern */
+            background-image: 
+                linear-gradient(#e5e7eb 1px, transparent 1px),
+                linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: center center;
+        }
+        canvas { display: block; }
+        
+        .instructions {
+            padding: 15px;
+            background: #f3f4f6;
+            font-size: 13px;
+            color: #4b5563;
+            border-top: 1px solid var(--border);
+            line-height: 1.5;
+        }
+        input[type="file"] { display: none; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row h-screen overflow-hidden">
+<body>
 
-    <div class="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col h-1/2 md:h-full z-10 shadow-lg">
-        <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
-            <h1 class="text-lg font-bold text-slate-800"><i class="fas fa-drafting-compass text-indigo-600 mr-2"></i>Editor</h1>
-            <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-bold">PRO</span>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" style="color: white; text-decoration: none; font-size: 12px; display: block; text-align: left; margin-bottom: 5px;">← Volver</a>
+            <h2>Room Planner Pro</h2>
         </div>
-
-        <div class="p-4 flex-1 overflow-y-auto space-y-4">
-            <div>
-                <label class="text-xs font-bold text-slate-500 uppercase">Tipo de Elemento</label>
-                <select id="shapeType" onchange="toggleInputs()" class="w-full mt-1 p-2 border rounded-lg text-sm outline-none">
-                    <option value="rect">Rectángulo / Mesa</option>
-                    <option value="circle">Círculo / Maceta</option>
-                    <option value="quarter">Puerta / Arco</option>
-                    <option value="sun">Orientación Solar</option>
-                    <option value="text">Texto Libre</option>
-                </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div id="groupW">
-                    <label id="labelW" class="text-xs font-bold text-slate-500 uppercase">Ancho (cm)</label>
-                    <input type="number" id="inputW" value="100" class="w-full mt-1 p-2 border rounded-lg text-sm update-trigger">
-                </div>
-                <div id="groupH">
-                    <label id="labelH" class="text-xs font-bold text-slate-500 uppercase">Alto (cm)</label>
-                    <input type="number" id="inputH" value="100" class="w-full mt-1 p-2 border rounded-lg text-sm update-trigger">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs font-bold text-slate-500 uppercase">Etiqueta</label>
-                <input type="text" id="inputText" value="Nuevo Objeto" class="w-full mt-1 p-2 border rounded-lg text-sm update-trigger">
-            </div>
-
-            <button onclick="addShape()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-3 rounded-lg transition-all text-sm">
-                <i class="fas fa-plus mr-2"></i>Añadir Objeto
-            </button>
-
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="deleteSelected()" class="bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-600 p-2 rounded-lg text-xs font-bold">
-                    <i class="fas fa-trash-alt"></i> Borrar
-                </button>
-                <button onclick="resetDefault()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-lg text-xs font-bold">
-                    <i class="fas fa-sync"></i> Reset
-                </button>
-            </div>
-
-            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
-                <p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Atajos de teclado</p>
-                <div class="flex justify-between text-[11px] text-slate-600"><span>Copiar/Pegar</span><span class="font-mono bg-white px-1 border rounded">Ctrl+C / V</span></div>
-                <div class="flex justify-between text-[11px] text-slate-600"><span>Cortar/Borrar</span><span class="font-mono bg-white px-1 border rounded">Ctrl+X / Del</span></div>
-            </div>
+        <div class="sidebar-content">
+            <div class="section-title">Estructura</div>
+            <div class="shape-btn" onclick="addShape('wall')">⬛ Muro</div>
+            <div class="shape-btn" onclick="addShape('room')">⬜ Habitación (Fondo)</div>
+            <div class="shape-btn" onclick="addShape('door')">🚪 Puerta</div>
+            <div class="shape-btn" onclick="addShape('window')">🪟 Ventana</div>
+            
+            <div class="section-title">Mobiliario</div>
+            <div class="shape-btn" onclick="addShape('table')">🪑 Mesa</div>
+            <div class="shape-btn" onclick="addShape('chair')">💺 Silla</div>
+            <div class="shape-btn" onclick="addShape('bed')">🛏️ Cama</div>
+            <div class="shape-btn" onclick="addShape('sofa')">🛋️ Sofá</div>
+        </div>
+        <div class="instructions">
+            <b>Atajos de Teclado:</b><br>
+            • <b>Alt + Arrastrar</b>: Mover vista (Pan)<br>
+            • <b>Rueda Ratón</b>: Zoom +/-<br>
+            • <b>Ctrl+C / Ctrl+V</b>: Copiar & Pegar<br>
+            • <b>Supr / Backspace</b>: Borrar<br>
+            • <b>L</b>: Bloquear/Anclar objeto
         </div>
     </div>
 
-    <div class="flex-1 bg-slate-200 p-8 flex justify-center items-center overflow-auto canvas-area relative">
-        <div class="absolute top-6 right-6 flex flex-col gap-2 shadow-sm">
-            <button onclick="zoomIn()" class="w-10 h-10 bg-white rounded-t-lg border-b border-slate-100 flex items-center justify-center hover:bg-slate-50"><i class="fas fa-plus"></i></button>
-            <button onclick="zoomOut()" class="w-10 h-10 bg-white rounded-b-lg flex items-center justify-center hover:bg-slate-50"><i class="fas fa-minus"></i></button>
+    <div id="main">
+        <div id="toolbar">
+            <button class="btn btn-primary" onclick="saveDesign()">💾 Guardar (JSON)</button>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">📂 Cargar (JSON)</button>
+            <input type="file" id="fileInput" accept=".json" onchange="loadDesign(event)">
+            
+            <div style="width: 1px; height: 30px; background: var(--border); margin: 0 10px;"></div>
+
+            <button class="btn" id="dimBtn" onclick="toggleDimensions()">📏 Mostrar Dimensiones</button>
+            <button class="btn" id="lockBtn" onclick="toggleLock()">🔒 Anclar (Lock)</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">🗑️ Eliminar</button>
         </div>
-        <canvas id="gridCanvas" width="1000" height="1000"></canvas>
+        <div id="canvas-wrapper">
+            <canvas id="c"></canvas>
+        </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gridCanvas');
-        const ctx = canvas.getContext('2d');
-        const BASE_SCALE = 2; 
-        const GRID_SIZE = 10;
-        
-        let zoom = 1.0;
-        let shapes = [];
-        let selectedIndex = -1;
-        let isDragging = false, isRotating = false;
-        let dragOffset = { x: 0, y: 0 };
-        let clipboard = null;
+        // --- Initialization ---
+        const wrapper = document.getElementById('canvas-wrapper');
+        const canvas = new fabric.Canvas('c', {
+            width: wrapper.clientWidth,
+            height: wrapper.clientHeight,
+            selection: true,
+            preserveObjectStacking: true
+        });
 
-        // --- CORRECCIÓN: AUTO-AJUSTE AL CAMBIAR INPUTS ---
-        document.querySelectorAll('.update-trigger').forEach(input => {
-            input.addEventListener('input', updateSelectedFromInputs);
-            input.addEventListener('keydown', (e) => {
-                if(e.key === 'Enter') { updateSelectedFromInputs(); input.blur(); }
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.setWidth(wrapper.clientWidth);
+            canvas.setHeight(wrapper.clientHeight);
+            canvas.renderAll();
+        });
+
+        let showDimensions = false;
+        let _clipboard = null;
+
+        // --- Grid Snapping (20px) ---
+        const grid = 20;
+        canvas.on('object:moving', function(options) {
+            options.target.set({
+                left: Math.round(options.target.left / grid) * grid,
+                top: Math.round(options.target.top / grid) * grid
             });
         });
 
-        function updateSelectedFromInputs() {
-            if (selectedIndex === -1) return;
-            const s = shapes[selectedIndex];
-            const type = document.getElementById('shapeType').value;
-            s.label = document.getElementById('inputText').value;
+        // --- Shape Library ---
+        function addShape(type) {
+            let obj;
+            const center = canvas.getVpCenter();
+            const common = {
+                left: center.x,
+                top: center.y,
+                originX: 'center',
+                originY: 'center',
+                transparentCorners: false,
+                cornerColor: '#4f46e5',
+                cornerStrokeColor: '#4f46e5',
+                borderColor: '#4f46e5',
+                cornerSize: 10,
+                padding: 0,
+                cornerStyle: 'circle',
+                borderDashArray: [4, 4]
+            };
+
+            switch(type) {
+                case 'wall':
+                    obj = new fabric.Rect({ ...common, width: 200, height: 20, fill: '#374151', label: 'Wall' });
+                    break;
+                case 'room':
+                    obj = new fabric.Rect({ ...common, width: 300, height: 300, fill: '#f3f4f6', stroke: '#9ca3af', strokeWidth: 2, label: 'Room Floor', rx: 5, ry: 5 });
+                    canvas.sendToBack(obj);
+                    break;
+                case 'door':
+                    obj = new fabric.Rect({ ...common, width: 60, height: 10, fill: '#b45309', label: 'Door' });
+                    break;
+                case 'window':
+                    obj = new fabric.Rect({ ...common, width: 100, height: 10, fill: '#bfdbfe', stroke: '#3b82f6', strokeWidth: 2, label: 'Window' });
+                    break;
+                case 'table':
+                    obj = new fabric.Rect({ ...common, width: 120, height: 80, fill: '#d97706', rx: 10, ry: 10, label: 'Table' });
+                    break;
+                case 'chair':
+                    obj = new fabric.Circle({ ...common, radius: 25, fill: '#10b981', label: 'Chair' });
+                    break;
+                case 'bed':
+                    obj = new fabric.Rect({ ...common, width: 140, height: 200, fill: '#8b5cf6', rx: 5, ry: 5, label: 'Bed' });
+                    break;
+                case 'sofa':
+                    obj = new fabric.Rect({ ...common, width: 200, height: 80, fill: '#ec4899', rx: 15, ry: 15, label: 'Sofa' });
+                    break;
+            }
+
+            if (obj) {
+                // Add a custom attribute to identify it for JSON export
+                obj.toObject = (function(toObject) {
+                    return function() {
+                        return fabric.util.object.extend(toObject.call(this), { label: this.label });
+                    };
+                })(obj.toObject);
+
+                canvas.add(obj);
+                canvas.setActiveObject(obj);
+            }
+        }
+
+        // --- Dimensions Display ---
+        function toggleDimensions() {
+            showDimensions = !showDimensions;
+            const btn = document.getElementById('dimBtn');
+            if (showDimensions) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            canvas.requestRenderAll();
+        }
+
+        // Draw dimensions dynamically on the canvas
+        canvas.on('after:render', function() {
+            if (!showDimensions) return;
+            const ctx = canvas.contextContainer;
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#dc2626';
+            ctx.textAlign = 'center';
             
-            if (s.type === 'rect') {
-                s.w = parseFloat(document.getElementById('inputW').value) || 10;
-                s.h = parseFloat(document.getElementById('inputH').value) || 10;
-            } else if (['circle', 'quarter', 'sun'].includes(s.type)) {
-                s.r = parseFloat(document.getElementById('inputW').value) || 10;
-            }
-            draw();
-        }
-
-        // --- ATAJOS DE TECLADO ---
-        window.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT') return; // No interferir si se escribe en un input
-
-            if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'c') copySelected();
-                if (e.key === 'v') pasteObject();
-                if (e.key === 'x') { copySelected(); deleteSelected(); }
-            }
-            if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
-        });
-
-        function copySelected() {
-            if (selectedIndex >= 0) clipboard = JSON.stringify(shapes[selectedIndex]);
-        }
-
-        function pasteObject() {
-            if (!clipboard) return;
-            let newObj = JSON.parse(clipboard);
-            newObj.x += 20; newObj.y += 20; // Desplazar un poco para ver que se pegó
-            shapes.push(newObj);
-            selectedIndex = shapes.length - 1;
-            syncInputsToSelected();
-            draw();
-        }
-
-        function syncInputsToSelected() {
-            if (selectedIndex === -1) return;
-            const s = shapes[selectedIndex];
-            document.getElementById('shapeType').value = s.type;
-            document.getElementById('inputText').value = s.label;
-            if (s.w) document.getElementById('inputW').value = s.w;
-            if (s.h) document.getElementById('inputH').value = s.h;
-            if (s.r) document.getElementById('inputW').value = s.r;
-            toggleInputs();
-        }
-
-        function zoomIn() { zoom += 0.1; draw(); }
-        function zoomOut() { zoom = Math.max(0.2, zoom - 0.1); draw(); }
-
-        function toggleInputs() {
-            const type = document.getElementById('shapeType').value;
-            document.getElementById('groupH').style.display = (['circle', 'quarter', 'sun', 'text'].includes(type)) ? 'none' : 'block';
-            document.getElementById('groupW').style.display = (type === 'text') ? 'none' : 'block';
-            document.getElementById('labelW').innerText = (['circle', 'quarter', 'sun'].includes(type)) ? 'Radio (cm)' : 'Ancho (cm)';
-        }
-
-        function addShape() {
-            const type = document.getElementById('shapeType').value;
-            const w = parseFloat(document.getElementById('inputW').value);
-            const h = parseFloat(document.getElementById('inputH').value);
-            let shape = { type, x: 250, y: 250, label: document.getElementById('inputText').value, fill: 'rgba(99, 102, 241, 0.5)', stroke: '#4338ca', angle: 0 };
-            if (type === 'rect') { shape.w = w; shape.h = h; }
-            else if (['circle', 'quarter', 'sun'].includes(type)) shape.r = w;
-            shapes.push(shape);
-            selectedIndex = shapes.length - 1;
-            draw();
-        }
-
-        function deleteSelected() { if (selectedIndex >= 0) { shapes.splice(selectedIndex, 1); selectedIndex = -1; draw(); } }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.scale(zoom, zoom);
-
-            shapes.forEach((s, i) => {
+            const objects = canvas.getObjects();
+            objects.forEach(obj => {
+                if (obj.label === 'Room Floor' || obj.width === undefined) return; // Skip floor or circles for simplicity
+                
+                // Get absolute coordinates
+                const bound = obj.getBoundingRect();
+                
+                // Real width/height based on scaling
+                const w = Math.round(obj.getScaledWidth());
+                const h = Math.round(obj.getScaledHeight());
+                
+                // Draw text above and to the right
+                ctx.fillText(`${w} cm`, bound.left + bound.width / 2, bound.top - 5);
+                
                 ctx.save();
-                ctx.translate(s.x * BASE_SCALE, s.y * BASE_SCALE);
-                ctx.rotate(s.angle * Math.PI / 180);
-                
-                ctx.fillStyle = s.fill;
-                ctx.strokeStyle = (i === selectedIndex) ? '#4f46e5' : s.stroke;
-                ctx.lineWidth = (i === selectedIndex) ? 4 : 2;
-
-                ctx.beginPath();
-                if (s.type === 'rect') {
-                    ctx.rect(-s.w*BASE_SCALE/2, -s.h*BASE_SCALE/2, s.w*BASE_SCALE, s.h*BASE_SCALE);
-                } else if (s.type === 'circle') {
-                    ctx.arc(0, 0, s.r*BASE_SCALE, 0, Math.PI*2);
-                } else if (s.type === 'quarter') {
-                    ctx.moveTo(0,0); ctx.arc(0, 0, s.r*BASE_SCALE, 0, Math.PI/2); ctx.closePath();
-                } else if (s.type === 'sun') {
-                    ctx.arc(0, 0, s.r*BASE_SCALE, 0, Math.PI*2);
-                    ctx.stroke(); ctx.moveTo(0,0); ctx.lineTo(0, s.r*BASE_SCALE + 20); // Flecha
-                } else if (s.type === 'text') {
-                    ctx.fillStyle = '#1e293b'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-                    ctx.fillText(s.label, 0, 0);
-                }
-                
-                if (s.type !== 'text') { ctx.fill(); ctx.stroke(); }
-                
-                // Texto interno
-                if (s.type !== 'text') {
-                    ctx.fillStyle = '#1e293b'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-                    ctx.rotate(-s.angle * Math.PI / 180); ctx.fillText(s.label, 0, 4);
-                }
-
-                // Tirador de rotación
-                if (i === selectedIndex) {
-                    ctx.beginPath(); ctx.arc(0, -50, 8, 0, Math.PI*2); ctx.fillStyle = 'white'; ctx.fill(); ctx.stroke();
-                }
+                ctx.translate(bound.left + bound.width + 15, bound.top + bound.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText(`${h} cm`, 0, 0);
                 ctx.restore();
             });
-            ctx.restore();
-        }
+        });
 
-        // --- INTERACCIÓN ---
-        function getPos(e) {
-            const r = canvas.getBoundingClientRect();
-            return { x: (e.clientX - r.left) / zoom / BASE_SCALE, y: (e.clientY - r.top) / zoom / BASE_SCALE };
-        }
+        // --- Navigation (Pan & Zoom) ---
+        canvas.on('mouse:wheel', function(opt) {
+            const delta = opt.e.deltaY;
+            let zoom = canvas.getZoom();
+            zoom *= 0.999 ** delta;
+            if (zoom > 5) zoom = 5;
+            if (zoom < 0.2) zoom = 0.2;
+            canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
+        });
 
-        canvas.onmousedown = (e) => {
-            const pos = getPos(e);
-            let hit = -1;
+        canvas.on('mouse:down', function(opt) {
+            const evt = opt.e;
+            if (evt.altKey === true) {
+                this.isDragging = true;
+                this.selection = false;
+                this.lastPosX = evt.clientX;
+                this.lastPosY = evt.clientY;
+            }
+        });
+
+        canvas.on('mouse:move', function(opt) {
+            if (this.isDragging) {
+                const e = opt.e;
+                const vpt = this.viewportTransform;
+                vpt[4] += e.clientX - this.lastPosX;
+                vpt[5] += e.clientY - this.lastPosY;
+                this.requestRenderAll();
+                this.lastPosX = e.clientX;
+                this.lastPosY = e.clientY;
+            }
+        });
+
+        canvas.on('mouse:up', function(opt) {
+            this.setViewportTransform(this.viewportTransform);
+            this.isDragging = false;
+            this.selection = true;
+        });
+
+        // --- Object Locking (Anchor) ---
+        function toggleLock() {
+            const activeObject = canvas.getActiveObject();
+            const activeGroup = canvas.getActiveObjects();
             
-            // Check rotación primero
-            if (selectedIndex >= 0) {
-                const s = shapes[selectedIndex];
-                const dx = pos.x - s.x, dy = pos.y - s.y;
-                const d = Math.sqrt(dx*dx + dy*dy);
-                if (d > 15 && d < 40) { isRotating = true; return; }
-            }
+            if (activeGroup.length === 0) return;
 
-            shapes.forEach((s, i) => {
-                const d = Math.sqrt((pos.x-s.x)**2 + (pos.y-s.y)**2);
-                if (d < 30) hit = i;
+            activeGroup.forEach(obj => {
+                const isLocked = obj.lockMovementX; // Check current state
+                obj.set({
+                    lockMovementX: !isLocked,
+                    lockMovementY: !isLocked,
+                    lockRotation: !isLocked,
+                    lockScalingX: !isLocked,
+                    lockScalingY: !isLocked,
+                    hasControls: isLocked, // hide controls when locked
+                    borderColor: !isLocked ? '#ef4444' : '#4f46e5'
+                });
+                
+                // Visual cue for locked objects
+                if(!isLocked) {
+                    obj.set('stroke', '#ef4444');
+                    obj.set('strokeWidth', 3);
+                    obj.set('strokeDashArray', null);
+                } else {
+                    obj.set('stroke', obj.label === 'Room Floor' ? '#9ca3af' : null);
+                    obj.set('strokeWidth', obj.label === 'Room Floor' ? 2 : 1);
+                }
             });
-
-            selectedIndex = hit;
-            if (hit >= 0) {
-                isDragging = true;
-                dragOffset = { x: pos.x - shapes[hit].x, y: pos.y - shapes[hit].y };
-                syncInputsToSelected();
-            }
-            draw();
-        };
-
-        window.onmousemove = (e) => {
-            if (!isDragging && !isRotating) return;
-            const pos = getPos(e);
-            const s = shapes[selectedIndex];
-            if (isDragging) {
-                s.x = Math.round(pos.x - dragOffset.x);
-                s.y = Math.round(pos.y - dragOffset.y);
-            } else if (isRotating) {
-                s.angle = Math.atan2(pos.y - s.y, pos.x - s.x) * 180 / Math.PI + 90;
-            }
-            draw();
-        };
-
-        window.onmouseup = () => { isDragging = isRotating = false; };
-
-        function resetDefault() {
-            shapes = [{ type: 'rect', x: 200, y: 200, w: 230, h: 310, label: 'Balcón', fill: 'rgba(200,200,200,0.3)', stroke: '#666', angle: 0 }];
-            draw();
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
         }
-        resetDefault();
+
+        // --- Actions & Hotkeys ---
+        function deleteSelected() {
+            const activeObjects = canvas.getActiveObjects();
+            if (activeObjects.length) {
+                canvas.discardActiveObject();
+                activeObjects.forEach(function(object) {
+                    if (!object.lockMovementX) { // Don't delete locked objects easily
+                        canvas.remove(object);
+                    }
+                });
+            }
+        }
+
+        function copy() {
+            const activeObject = canvas.getActiveObject();
+            if (activeObject) {
+                activeObject.clone(function(cloned) {
+                    _clipboard = cloned;
+                });
+            }
+        }
+
+        function paste() {
+            if (!_clipboard) return;
+            _clipboard.clone(function(clonedObj) {
+                canvas.discardActiveObject();
+                clonedObj.set({
+                    left: clonedObj.left + 20,
+                    top: clonedObj.top + 20,
+                    evented: true,
+                });
+                if (clonedObj.type === 'activeSelection') {
+                    clonedObj.canvas = canvas;
+                    clonedObj.forEachObject(function(obj) {
+                        canvas.add(obj);
+                    });
+                    clonedObj.setCoords();
+                } else {
+                    canvas.add(clonedObj);
+                }
+                _clipboard.top += 20;
+                _clipboard.left += 20;
+                canvas.setActiveObject(clonedObj);
+                canvas.requestRenderAll();
+            });
+        }
+
+        // Global Keyboard Listeners
+        window.addEventListener('keydown', function(e) {
+            // Check if user is typing in an input (not applicable here, but good practice)
+            if (e.target.tagName.toLowerCase() === 'input') return;
+
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) { e.preventDefault(); copy(); }
+            if (e.ctrlKey && (e.key === 'v' || e.key === 'V')) { e.preventDefault(); paste(); }
+            if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
+            if (e.key === 'l' || e.key === 'L') { toggleLock(); }
+        });
+
+        // --- Save / Load ---
+        function saveDesign() {
+            const json = JSON.stringify(canvas.toJSON(['label', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls']));
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'RoomLayout.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadDesign(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(f) {
+                const data = f.target.result;
+                canvas.loadFromJSON(data, canvas.renderAll.bind(canvas), function(o, object) {
+                    // Re-apply customizations if needed
+                });
+            };
+            reader.readAsText(file);
+            // Reset input
+            event.target.value = '';
+        }
+
     </script>
 </body>
 </html>
